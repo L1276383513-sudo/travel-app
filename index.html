@@ -1008,15 +1008,14 @@ function renderTripCard(trip) {
 
 function openXhs(keyword) {
   var searchKey = keyword + ' 攻略';
-  var webUrl = 'https://www.xiaohongshu.com/search_result?keyword=' + encodeURIComponent(searchKey) + '&source=web_explore_feed';
+  // 直接用小红书 App 的 URL scheme 打开搜索
+  var appUrl = 'xhsdiscover://search/result?keyword=' + encodeURIComponent(searchKey);
   closeModal();
-  var a = document.createElement('a');
-  a.href = webUrl;
-  a.target = '_blank';
-  a.rel = 'noopener';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  window.location.href = appUrl;
+  // 2秒后如果还在当前页面（App没打开），提示用户
+  setTimeout(function() {
+    toast('如果没跳转，请确认已安装小红书App');
+  }, 2000);
 }
 
 function openTripDetail(tripId) {
