@@ -1,0 +1,2251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="旅行计划">
+  <meta name="theme-color" content="#2d6a4f">
+  <meta name="description" content="个人专属旅行计划工具：行程规划、目的地收藏、预算记录、飞行里程、旅行小记">
+  <title>旅行计划</title>
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+  <link rel="shortcut icon" href="favicon.ico">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- 高德地图 JS API -->
+  <script type="text/javascript">
+    window._AMapSecurityConfig = {
+      securityJsCode: '4b210a61c0bd0bb7bbe36387118adf3b',
+    };
+  </script>
+  <script type="text/javascript" src="https://webapi.amap.com/maps?v=2.0&key=74815b9953b78fadc96115b7ac17b933&plugin=AMap.Geocoder,AMap.PlaceSearch,AMap.Geolocation"></script>
+
+  <style>
+    :root {
+      --primary: #2d6a4f;          /* 森林绿 */
+      --primary-dark: #1b4332;
+      --primary-light: #95d5b2;
+      --primary-bg: #d8f3dc;
+      --accent: #74c69d;            /* 草绿 */
+      --success: #2d6a4f;
+      --success-bg: #d8f3dc;
+      --warning: #b08968;           /* 木棕，用于提醒 */
+      --warning-bg: #f3e9dd;
+      --danger: #b56576;            /* 暗红，用于危险操作 */
+      --danger-bg: #f5e6e9;
+      --purple: #2d6a4f;            /* 统一到绿色，去掉紫色 */
+      --purple-bg: #d8f3dc;
+      --text-1: #1a1a1a;
+      --text-2: #6b7280;
+      --text-3: #9ca3af;
+      --bg: #faf9f7;                /* 米白底 */
+      --card: #ffffff;
+      --border: #ececec;
+      --radius: 14px;
+      --radius-sm: 10px;
+      --shadow: 0 1px 2px rgba(0,0,0,0.03);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text-1);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    #app {
+      max-width: 430px;
+      margin: 0 auto;
+      min-height: 100vh;
+      background: var(--bg);
+      position: relative;
+      padding-bottom: calc(88px + var(--safe-bottom));
+    }
+
+    .page { display: none; animation: fadeIn 0.3s ease; }
+    .page.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+    /* 顶部栏 */
+    .top-bar {
+      padding: 18px 18px 14px;
+      background: var(--card);
+      color: var(--text-1);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .top-bar .subtitle { font-size: 13px; color: var(--text-2); margin-bottom: 2px; }
+    .top-bar .title-row { display: flex; align-items: center; justify-content: space-between; }
+    .top-bar h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+    .top-bar .icon-btn {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+    }
+    .top-bar .icon-btn svg { width: 22px; height: 22px; stroke: var(--text-2); }
+
+    .page-header { padding: 18px 18px 10px; }
+    .page-header h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+    .page-header .subtitle { font-size: 13px; color: var(--text-2); margin-top: 2px; }
+
+    .content { padding: 0 16px 20px; }
+
+    /* 卡片 */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+    }
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .card-header h2 { font-size: 16px; font-weight: 600; }
+    .card-header .more { font-size: 13px; color: var(--primary); cursor: pointer; font-weight: 500; }
+
+    /* 首页 Hero */
+    .hero-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .hero-card {
+      background: var(--bg);
+      border-radius: var(--radius);
+      padding: 14px;
+      color: var(--text-1);
+      border: 1px solid var(--border);
+    }
+    .hero-card .label { font-size: 11px; color: var(--text-2); margin-bottom: 4px; }
+    .hero-card .value { font-size: 26px; font-weight: 700; letter-spacing: -1px; color: var(--primary); }
+    .hero-card .sub { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+
+    /* 指标条 */
+    .stat-row {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+    }
+    .stat-pill {
+      background: var(--card); border-radius: 12px;
+      padding: 12px 6px; text-align: center;
+      box-shadow: var(--shadow);
+    }
+    .stat-pill .num { font-size: 20px; font-weight: 700; color: var(--primary); }
+    .stat-pill .label { font-size: 11px; color: var(--text-2); margin-top: 2px; }
+
+    /* 按钮 */
+    .btn {
+      border: none; outline: none; cursor: pointer;
+      font-family: inherit; font-weight: 600;
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 12px 18px; border-radius: 12px; font-size: 14px;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-secondary { background: var(--bg); color: var(--text-1); }
+    .btn-danger { background: var(--danger-bg); color: var(--danger); }
+    .btn-block { width: 100%; }
+    .btn-sm { padding: 8px 12px; font-size: 12px; }
+
+    /* FAB */
+    .fab {
+      position: fixed; bottom: calc(92px + var(--safe-bottom)); right: 18px;
+      width: 56px; height: 56px; border-radius: 50%;
+      background: var(--primary);
+      color: white; border: none; box-shadow: 0 2px 12px rgba(45,106,79,0.25);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; z-index: 250;
+    }
+    .fab svg { width: 26px; height: 26px; stroke: white; }
+
+    /* 列表项 */
+    .list-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 0; border-bottom: 1px solid var(--border);
+    }
+    .list-item:last-child { border-bottom: none; }
+    .list-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 20px;
+    }
+    .list-icon svg { width: 22px; height: 22px; stroke: var(--primary); }
+    .list-body { flex: 1; min-width: 0; }
+    .list-title { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+    .list-desc { font-size: 12px; color: var(--text-2); }
+    .list-meta { font-size: 11px; color: var(--text-3); margin-top: 4px; }
+    .list-arrow { color: var(--text-3); }
+
+    /* 标签 */
+    .tag {
+      display: inline-flex; align-items: center;
+      padding: 3px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 600;
+    }
+    .tag-planning { background: var(--primary-bg); color: var(--primary); }
+    .tag-ongoing { background: var(--success-bg); color: var(--success); }
+    .tag-completed { background: var(--border); color: var(--text-2); }
+    .tag-wish { background: var(--purple-bg); color: var(--purple); }
+
+    /* 表单 */
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--text-2); }
+    .form-input, .form-textarea, .form-select {
+      width: 100%; border: 1px solid var(--border); background: var(--bg);
+      border-radius: var(--radius-sm); padding: 12px 14px;
+      font-size: 15px; font-family: inherit; color: var(--text-1); outline: none;
+    }
+    .form-input:focus, .form-textarea:focus, .form-select:focus { border-color: var(--primary-light); background: var(--card); }
+    .form-textarea { min-height: 90px; resize: vertical; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* 空状态 */
+    .empty { text-align: center; padding: 50px 20px; color: var(--text-3); }
+    .empty svg { margin-bottom: 12px; stroke: var(--text-3); }
+    .empty .title { font-size: 15px; font-weight: 600; color: var(--text-1); margin-bottom: 4px; }
+    .empty .desc { font-size: 13px; }
+
+    /* 底部 Tab */
+    .tab-bar {
+      position: fixed; bottom: 0; left: 50%;
+      transform: translateX(-50%); width: 100%; max-width: 430px;
+      background: rgba(255,255,255,0.95); backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border);
+      display: flex; padding: 8px 0 calc(8px + var(--safe-bottom));
+      z-index: 200;
+    }
+    .tab-item {
+      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+      cursor: pointer; padding: 4px 0;
+    }
+    .tab-icon { width: 24px; height: 24px; }
+    .tab-icon svg { width: 24px; height: 24px; stroke: var(--text-3); }
+    .tab-label { font-size: 10px; color: var(--text-3); font-weight: 500; }
+    .tab-item.active .tab-label { color: var(--primary); }
+    .tab-item.active .tab-icon svg { stroke: var(--primary); }
+
+    /* 弹窗 */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+      z-index: 400; display: none; align-items: flex-end; justify-content: center;
+      animation: fadeIn 0.2s ease;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: var(--card); width: 100%; max-width: 430px;
+      border-radius: 20px 20px 0 0;
+      padding: 20px; max-height: 90vh; overflow-y: auto;
+      animation: slideUp 0.35s cubic-bezier(0.4,0,0.2,1);
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 18px;
+    }
+    .modal-header h2 { font-size: 18px; font-weight: 700; }
+    .modal-close { background: none; border: none; font-size: 24px; color: var(--text-3); cursor: pointer; }
+
+    /* 媒体上传预览 */
+    .media-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+    }
+    .media-item {
+      aspect-ratio: 1; border-radius: var(--radius-sm); overflow: hidden;
+      background: var(--bg); position: relative; cursor: pointer;
+    }
+    .media-item img, .media-item video { width: 100%; height: 100%; object-fit: cover; }
+    .media-add {
+      aspect-ratio: 1; border-radius: var(--radius-sm); border: 2px dashed var(--border);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      color: var(--text-3); cursor: pointer; gap: 4px;
+    }
+    .media-add svg { stroke: var(--text-3); }
+
+    .media-add svg { width: 28px; height: 28px; stroke: var(--text-3); }
+    .media-add span { font-size: 11px; }
+
+    /* 进度条 */
+    .progress-bar {
+      height: 8px; background: var(--border); border-radius: 4px; overflow: hidden;
+    }
+    .progress-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+
+    /* 菜单 */
+    .menu-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 0; border-bottom: 1px solid var(--border); cursor: pointer;
+    }
+    .menu-item:last-child { border-bottom: none; }
+    .menu-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--primary-bg);
+    }
+    .menu-icon svg { stroke: var(--primary); }
+    .menu-label { flex: 1; font-size: 14px; }
+    .menu-arrow { color: var(--text-3); }
+
+    /* 行程详情 */
+    .day-card {
+      background: var(--bg); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 10px;
+    }
+    .day-card h4 { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+    .activity-item {
+      display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid #e5e7eb;
+    }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-time { font-size: 12px; color: var(--text-3); width: 50px; flex-shrink: 0; }
+    .activity-body { flex: 1; }
+    .activity-title { font-size: 13px; font-weight: 500; }
+    .activity-desc { font-size: 11px; color: var(--text-2); }
+
+    /* 地图容器 */
+    #travelMap, #homeMap { border-radius: var(--radius); overflow: hidden; }
+
+    /* 隐藏滚动条 */
+    ::-webkit-scrollbar { display: none; }
+
+    /* 小记卡片 */
+    .diary-card { margin-bottom: 14px; }
+    .diary-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .diary-avatar {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: var(--primary);
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 600; font-size: 14px;
+    }
+    .diary-meta { flex: 1; }
+    .diary-title { font-size: 14px; font-weight: 600; }
+    .diary-date { font-size: 11px; color: var(--text-3); }
+    .diary-content { font-size: 14px; line-height: 1.7; color: var(--text-1); margin-bottom: 10px; }
+    .diary-media { display: flex; gap: 8px; overflow-x: auto; }
+    .diary-media img, .diary-media video { height: 120px; border-radius: 10px; object-fit: cover; flex-shrink: 0; }
+
+    /* toast */
+    .toast {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.75); color: white; padding: 12px 20px;
+      border-radius: 10px; font-size: 14px; z-index: 500;
+      display: none; pointer-events: none;
+    }
+    .toast.show { display: block; animation: fadeIn 0.2s ease; }
+  </style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toast" id="toast"></div>
+<script>
+// ===== 图标 SVG =====
+const ICONS = {
+  home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+  map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 21 18 21 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>',
+  plane: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20"/><path d="M13 2 4.1 12h15.8L11 22"/><path d="M12 12v9"/></svg>',
+  heart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',
+  wallet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>',
+  book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
+  user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+  close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+  edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+  image: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>',
+  video: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>',
+  camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+  chevronRight: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>',
+  calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+  location: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+  settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+  download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+  upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>'
+};
+
+// ===== 数据 =====
+const DEFAULT_DATA = {
+  trips: [],
+  wishlist: [],
+  flights: [],
+  diaries: [],
+  settings: { name: '旅行者', currency: 'CNY' }
+};
+
+let appData = JSON.parse(JSON.stringify(DEFAULT_DATA));
+let db = null;
+let currentPage = 'home';
+let mediaCache = {}; // diaryId -> blob urls
+
+// ===== IndexedDB 媒体存储 =====
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('TravelAppDB', 1);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+    request.onupgradeneeded = (event) => {
+      const database = event.target.result;
+      if (!database.objectStoreNames.contains('media')) {
+        database.createObjectStore('media', { keyPath: 'id' });
+      }
+    };
+  });
+}
+
+async function saveMedia(id, blob) {
+  if (!db) return;
+  const tx = db.transaction('media', 'readwrite');
+  const store = tx.objectStore('media');
+  const ab = await blob.arrayBuffer();
+  store.put({ id, data: ab, type: blob.type });
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function loadMedia(id) {
+  if (!db) return null;
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('media', 'readonly');
+    const store = tx.objectStore('media');
+    const req = store.get(id);
+    req.onsuccess = () => {
+      if (!req.result) return resolve(null);
+      const blob = new Blob([req.result.data], { type: req.result.type });
+      resolve(URL.createObjectURL(blob));
+    };
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function deleteMedia(id) {
+  if (!db) return;
+  const tx = db.transaction('media', 'readwrite');
+  tx.objectStore('media').delete(id);
+}
+
+// ===== localStorage 数据 =====
+function loadData() {
+  try {
+    const saved = localStorage.getItem('travelAppData_v4');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      appData = { ...DEFAULT_DATA, ...parsed };
+      return;
+    }
+  } catch (e) { console.error(e); }
+  // 首次使用：预置示例数据
+  appData = {
+    trips: [
+      {
+        id: uid(),
+        title: '日本关西七日游',
+        startDate: '2026-08-15',
+        endDate: '2026-08-21',
+        destination: '京都',
+        country: '日本',
+        budget: 15000,
+        activities: [
+          { day: 1, time: '14:00', title: '抵达关西机场', desc: '乘坐 Haruka 前往京都' },
+          { day: 1, time: '18:00', title: '鸭川漫步', desc: '看夕阳' },
+          { day: 2, time: '09:00', title: '清水寺', desc: '早起避开人群' },
+          { day: 2, time: '15:00', title: '伏见稻荷大社', desc: '千本鸟居' }
+        ],
+        expenses: [
+          { id: uid(), category: 'transport', amount: 3200, note: '机票', date: '2026-08-15' },
+          { id: uid(), category: 'stay', amount: 4200, note: '京都民宿 6 晚', date: '2026-08-15' },
+          { id: uid(), category: 'food', amount: 1800, note: '怀石料理', date: '2026-08-16' }
+        ]
+      },
+      {
+        id: uid(),
+        title: '冰岛极光之旅',
+        startDate: '2026-12-20',
+        endDate: '2026-12-28',
+        destination: '雷克雅未克',
+        country: '冰岛',
+        budget: 25000,
+        activities: [],
+        expenses: []
+      },
+      {
+        id: uid(),
+        title: '西藏-亚东县',
+        startDate: '2026-09-15',
+        endDate: '2026-09-18',
+        destination: '亚东',
+        country: '中国',
+        budget: 8000,
+        note: '中印不丹边境 · 海拔2800-4400m · 需边防证 · 预约小程序：亚东文旅通',
+        activities: [
+          { day: 0, time: '', title: '交通方式', desc: '公共交通：日喀则汽车站每日两班 / 拉萨汽车站每日一班；自驾：日喀则/拉萨/成都，神州租车/一嗨租车' },
+          { day: 1, time: '08:00', title: '乃堆拉国门（中印）', desc: '亚东县→乃堆拉约1小时，海拔2800→4000m，早上需穿羽绒服' },
+          { day: 1, time: '10:00', title: '噶举寺', desc: '乃堆拉下山半山腰，噶举派寺庙，有绿度母，顺路浏览约20分钟' },
+          { day: 2, time: '09:00', title: '巴夏', desc: '乃堆拉→巴夏约1小时，庞达村方向' },
+          { day: 2, time: '09:30', title: '野人谷', desc: '巴夏附近自然景观' },
+          { day: 2, time: '10:00', title: '远眺不丹🇧🇹', desc: '巴夏方向可见不丹边境' },
+          { day: 2, time: '10:30', title: '转经筒', desc: '巴夏沿线' },
+          { day: 2, time: '12:00', title: '亚东鱼刺身', desc: '当地特色美食' },
+          { day: 2, time: '14:00', title: '庞达石绘', desc: '当地人文项目体验' },
+          { day: 3, time: '06:00', title: '卓木拉日雪山', desc: '"干城章嘉新娘"，可飞无人机。拉萨→亚东县堆纳乡约6小时，途经普莫雍错-库拉岗日-多情措' },
+          { day: 3, time: '15:00', title: '错朗湖', desc: '卓木拉日和吉楚锥柯之间' }
+        ],
+        expenses: []
+      }
+    ],
+    wishlist: [
+      { id: uid(), name: '皇后镇', country: '新西兰', category: 'nature', note: '跳伞 +  Milford Sound' },
+      { id: uid(), name: '圣托里尼', country: '希腊', category: 'city', note: '看最美日落' },
+      { id: uid(), name: '清迈', country: '泰国', category: 'food', note: '水灯节' }
+    ],
+    flights: [
+      { id: uid(), from: 'PEK', to: 'KIX', fromCity: '北京', toCity: '大阪', flightNo: 'CA927', date: '2026-08-15', distance: 1785 },
+      { id: uid(), from: 'KIX', to: 'PEK', fromCity: '大阪', toCity: '北京', flightNo: 'CA928', date: '2026-08-21', distance: 1785 }
+    ],
+    diaries: [
+      {
+        id: uid(),
+        title: '路上的风景',
+        date: '2026-08-16',
+        location: '京都，日本',
+        content: '黄昏时分，车行驶在通往山区的公路上。远处的山峦被夕阳染成了紫色，天空从橙红渐变到深蓝。\n\n这一刻突然明白，旅行的意义不在于打卡多少景点，而是这些猝不及防的感动。',
+        media: []
+      }
+    ],
+    settings: { name: '旅行者', currency: 'CNY' }
+  };
+  saveData();
+}
+
+function saveData() {
+  localStorage.setItem('travelAppData_v4', JSON.stringify(appData));
+}
+
+// ===== 工具函数 =====
+function $(id) { return document.getElementById(id); }
+function esc(str) { return str ? String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) : ''; }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
+function formatDate(d) { return d ? new Date(d).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' }) : ''; }
+function formatDateFull(d) { return d ? new Date(d).toLocaleDateString('zh-CN') : ''; }
+function daysBetween(a, b) {
+  const ms = new Date(b) - new Date(a);
+  return Math.ceil(ms / (1000 * 60 * 60 * 24)) + 1;
+}
+function totalFlightMiles() {
+  return appData.flights.reduce((sum, f) => sum + (parseFloat(f.distance) || 0), 0);
+}
+function nextTrip() {
+  const today = new Date();
+  const upcoming = appData.trips.filter(t => new Date(t.endDate) >= today).sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+  return upcoming[0] || null;
+}
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ===== 大圆距离计算（飞行里程） =====
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLon/2)**2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return Math.round(R * c);
+}
+
+// ===== 机场坐标（常用） =====
+const AIRPORTS = {
+  'PEK': [39.9042, 116.4074], 'PKX': [39.5098, 116.4105],
+  'SHA': [31.1443, 121.8083], 'PVG': [31.1443, 121.8083],
+  'CAN': [23.3959, 113.2988], 'SZX': [22.6393, 113.8107],
+  'HKG': [22.3080, 113.9185], 'TPE': [25.0329, 121.5654],
+  'NRT': [35.7647, 140.3864], 'HND': [35.5494, 139.7798], 'KIX': [34.4273, 135.2440],
+  'ICN': [37.4602, 126.4407], 'SIN': [1.3644, 103.9915],
+  'BKK': [13.6900, 100.7501], 'KUL': [2.7456, 101.7072],
+  'LHR': [51.4700, -0.4543], 'CDG': [49.0097, 2.5479],
+  'JFK': [40.6413, -73.7781], 'LAX': [33.9416, -118.4085],
+  'SYD': [-33.9399, 151.1753], 'AKL': [-37.0082, 174.7850],
+  'DXB': [25.2532, 55.3657], 'IST': [41.2753, 28.7519]
+};
+
+function calcFlightDistance(fromCode, toCode) {
+  const a = AIRPORTS[fromCode.toUpperCase()];
+  const b = AIRPORTS[toCode.toUpperCase()];
+  if (a && b) return haversine(a[0], a[1], b[0], b[1]);
+  return 0;
+}
+
+// ===== 页面渲染 =====
+function renderApp() {
+  const app = $('app');
+  app.innerHTML = `
+    ${renderPage()}
+    ${renderTabBar()}
+    ${currentPage === 'budget' ? '' : renderFAB()}
+  `;
+  bindTabEvents();
+  if (currentPage !== 'budget') bindFAB();
+  renderCurrentPage();
+}
+
+function renderTabBar() {
+  const tabs = [
+    { id: 'home', label: '首页', icon: ICONS.home },
+    { id: 'trips', label: '行程', icon: ICONS.map },
+    { id: 'wishlist', label: '想去', icon: ICONS.heart },
+    { id: 'diaries', label: '小记', icon: ICONS.book },
+    { id: 'profile', label: '我的', icon: ICONS.user }
+  ];
+  return `<div class="tab-bar">
+    ${tabs.map(t => `
+      <div class="tab-item ${currentPage === t.id ? 'active' : ''}" data-page="${t.id}">
+        <div class="tab-icon" style="color:${currentPage === t.id ? 'var(--primary)' : 'var(--text-3)'};">${t.icon}</div>
+        <div class="tab-label">${t.label}</div>
+      </div>
+    `).join('')}
+  </div>`;
+}
+
+function renderFAB() {
+  return `<button class="fab" id="fab">${ICONS.plus}</button>`;
+}
+
+function bindTabEvents() {
+  document.querySelectorAll('.tab-item').forEach(item => {
+    item.addEventListener('click', () => switchPage(item.dataset.page));
+  });
+}
+
+function bindFAB() {
+  $('fab').addEventListener('click', () => onFabClick());
+}
+
+function switchPage(page) {
+  currentPage = page;
+  window.scrollTo(0, 0);
+  renderApp();
+}
+
+function renderPage() {
+  switch (currentPage) {
+    case 'home': return renderHome();
+    case 'trips': return renderTrips();
+    case 'wishlist': return renderWishlist();
+    case 'diaries': return renderDiaries();
+    case 'profile': return renderProfile();
+    case 'budget': return renderBudget();
+    case 'flights': return renderFlights();
+    case 'map': return renderMapPage();
+    default: return renderHome();
+  }
+}
+
+function renderCurrentPage() {
+  // 页面切换后的额外初始化
+  if (currentPage === 'home') initHomeCharts();
+  if (currentPage === 'budget') initBudgetChart();
+  if (currentPage === 'flights') initFlightAnimation();
+  if (currentPage === 'map') initMap();
+}
+
+// ===== 首页 =====
+function renderHome() {
+  const totalTrips = appData.trips.length;
+  const totalCountries = new Set(appData.trips.map(t => t.country).filter(Boolean)).size;
+  const totalMiles = totalFlightMiles();
+  const next = nextTrip();
+  const daysUntil = next ? Math.ceil((new Date(next.startDate) - new Date()) / (1000*60*60*24)) : 0;
+
+  return `
+    <div class="top-bar">
+      <div class="subtitle">Hello, ${esc(appData.settings.name)}</div>
+      <div class="title-row">
+        <h1>旅行计划</h1>
+        <div class="icon-btn" onclick="switchPage('profile')">${ICONS.settings}</div>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-card">
+          <div class="label">已去国家</div>
+          <div class="value">${totalCountries}</div>
+          <div class="sub">${totalTrips} 段旅程</div>
+        </div>
+        <div class="hero-card">
+          <div class="label">飞行里程</div>
+          <div class="value">${(totalMiles / 10000).toFixed(1)}<span style="font-size:14px;font-weight:500;">万</span></div>
+          <div class="sub">公里</div>
+        </div>
+      </div>
+    </div>
+    <div class="content">
+      ${next ? `
+        <div class="card" style="border-left:3px solid var(--primary);">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+            <div>
+              <div style="font-size:12px;color:var(--text-2);">下次出发</div>
+              <div style="font-size:20px;font-weight:700;margin-top:2px;">${esc(next.title)}</div>
+              <div style="font-size:13px;color:var(--text-2);margin-top:4px;">${formatDateFull(next.startDate)} - ${formatDateFull(next.endDate)}</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:34px;font-weight:700;color:var(--primary);">${daysUntil}</div>
+              <div style="font-size:11px;color:var(--text-3);">天后出发</div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--text-2);">${esc(next.destination || '未填写目的地')}</div>
+        </div>
+      ` : `
+        <div class="card empty" style="padding:30px 20px;">
+          <div class="title">还没有即将开始的旅行</div>
+          <div class="desc">点击下方 + 号创建你的第一个行程</div>
+        </div>
+      `}
+
+      <div class="card">
+        <div class="card-header"><h2>快速入口</h2></div>
+        <div class="stat-row">
+          <div class="stat-pill" onclick="switchPage('budget')">
+            <div class="num">${appData.trips.length}</div>
+            <div class="label">行程预算</div>
+          </div>
+          <div class="stat-pill" onclick="switchPage('flights')">
+            <div class="num">${appData.flights.length}</div>
+            <div class="label">飞行记录</div>
+          </div>
+          <div class="stat-pill" onclick="switchPage('map')">
+            <div class="num">足迹</div>
+            <div class="label">地图</div>
+          </div>
+          <div class="stat-pill" onclick="switchPage('diaries')">
+            <div class="num">${appData.diaries.length}</div>
+            <div class="label">旅行小记</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h2>今年足迹</h2><span class="more" onclick="switchPage('map')">查看地图 ›</span></div>
+        <div id="homeMap" style="height:180px;border-radius:14px;"></div>
+      </div>
+
+      ${appData.wishlist.length > 0 ? `
+        <div class="card">
+          <div class="card-header"><h2>想去清单</h2><span class="more" onclick="switchPage('wishlist')">全部 ›</span></div>
+          ${appData.wishlist.slice(0, 3).map(w => `
+            <div class="list-item">
+              <div class="list-icon" style="background:var(--purple-bg);">${ICONS.location}</div>
+              <div class="list-body">
+                <div class="list-title">${esc(w.name)}</div>
+                <div class="list-desc">${esc(w.country || '')}</div>
+              </div>
+              <span class="tag tag-wish">种草</span>
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+function initHomeCharts() {
+  initHomeMap();
+}
+
+// ===== 行程页 =====
+function renderTrips() {
+  const sorted = [...appData.trips].sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+  return `
+    <div class="page-header">
+      <h1>我的行程</h1>
+      <div class="subtitle">${sorted.length} 段旅程 · ${new Set(sorted.map(t => t.country).filter(Boolean)).size} 个国家</div>
+    </div>
+    <div class="content">
+      ${sorted.length === 0 ? emptyState('还没有行程', '点击右下角 + 创建你的第一段旅程', ICONS.map) : sorted.map(t => renderTripCard(t)).join('')}
+    </div>
+  `;
+}
+
+function renderTripCard(trip) {
+  const today = new Date();
+  const hasDates = trip.startDate && trip.endDate;
+  const start = hasDates ? new Date(trip.startDate) : null;
+  const end = hasDates ? new Date(trip.endDate) : null;
+  let status = 'planning';
+  let statusText = '计划中';
+  if (start && end) {
+    if (today >= start && today <= end) { status = 'ongoing'; statusText = '进行中'; }
+    else if (today > end) { status = 'completed'; statusText = '已结束'; }
+  }
+  const days = hasDates ? daysBetween(trip.startDate, trip.endDate) : 0;
+  const expenses = trip.expenses ? trip.expenses.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0) : 0;
+  const budgetPct = trip.budget > 0 ? Math.min(100, Math.round(expenses / trip.budget * 100)) : 0;
+
+  return `
+    <div class="card" onclick="openTripDetail('${trip.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+        <div>
+          <div style="font-size:16px;font-weight:700;margin-bottom:2px;">${esc(trip.title)}</div>
+          <div style="font-size:12px;color:var(--text-2);">${hasDates ? formatDateFull(trip.startDate) + ' · ' + days + ' 天' : '日期待定'}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="tag tag-${status}">${statusText}</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-2);margin-bottom:12px;">
+        <span style="width:16px;">${ICONS.location}</span> <span>${esc(trip.destination || '未填写')} · ${esc(trip.country || '')}</span>
+      </div>
+      ${trip.budget > 0 ? `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px;">
+          <span style="color:var(--text-2);">预算进度</span>
+          <span style="font-weight:600;">¥${expenses.toFixed(0)} / ¥${trip.budget}</span>
+        </div>
+        <div class="progress-bar" style="margin-bottom:12px;">
+          <div class="progress-fill" style="width:${budgetPct}%;background:${budgetPct > 90 ? 'var(--danger)' : budgetPct > 70 ? 'var(--warning)' : 'var(--success)'}"></div>
+        </div>
+      ` : ''}
+      <div style="display:flex;gap:8px;" onclick="event.stopPropagation()">
+        <button class="btn btn-sm btn-secondary" style="flex:1;" onclick="editTrip('${trip.id}')">编辑</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteTrip('${trip.id}')">删除</button>
+      </div>
+    </div>
+  `;
+}
+
+function openTripDetail(tripId) {
+  // 弹窗显示行程详情（日程 + 花销）
+  const trip = appData.trips.find(t => t.id === tripId);
+  if (!trip) return;
+  showModal('行程详情', renderTripDetailContent(trip), [
+    { text: '编辑', action: "closeModal(); editTrip(tripId);", class: 'btn btn-secondary' },
+    { text: '关闭', action: "closeModal();", class: 'btn btn-primary' }
+  ]);
+}
+
+function renderTripDetailContent(trip) {
+  const days = [];
+  const totalDays = daysBetween(trip.startDate, trip.endDate);
+  for (let i = 1; i <= totalDays; i++) {
+    const date = new Date(trip.startDate);
+    date.setDate(date.getDate() + i - 1);
+    const activities = trip.activities ? trip.activities.filter(a => a.day === i) : [];
+    days.push({ day: i, date: date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' }), activities });
+  }
+  const expenses = trip.expenses || [];
+  const spent = expenses.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+  const catNames = { transport: '交通', stay: '住宿', food: '餐饮', ticket: '门票', shopping: '购物', other: '其他' };
+
+  return `
+    <div style="margin-bottom:16px;">
+      <div style="font-size:13px;color:var(--text-2);margin-bottom:4px;">${esc(trip.destination || '未填写')} · ${esc(trip.country || '')}</div>
+      <div style="font-size:13px;color:var(--text-2);">${formatDateFull(trip.startDate)} - ${formatDateFull(trip.endDate)} · 共 ${totalDays} 天</div>
+      ${trip.budget > 0 ? `<div style="font-size:13px;color:var(--text-2);margin-top:4px;">预算 ¥${trip.budget} · 已花 ¥${spent.toFixed(0)}</div>` : ''}
+      ${trip.note ? `<div style="font-size:13px;color:var(--text-2);margin-top:8px;background:var(--primary-bg);padding:10px 12px;border-radius:10px;line-height:1.5;">${esc(trip.note)}</div>` : ''}
+    </div>
+    <div class="card-header" style="padding:0 0 10px;">
+      <h2>每日日程</h2>
+      <span class="more" onclick="closeModal();editTrip('${trip.id}')">编辑行程 ›</span>
+    </div>
+    ${days.map(d => `
+      <div class="day-card">
+        <h4>第 ${d.day} 天 · ${d.date}</h4>
+        ${d.activities.length === 0 ? '<div style="font-size:12px;color:var(--text-3);">暂无安排</div>' : d.activities.map(a => `
+          <div class="activity-item">
+            <div class="activity-time">${esc(a.time || '--:--')}</div>
+            <div class="activity-body">
+              <div class="activity-title">${esc(a.title)}</div>
+              ${a.desc ? `<div class="activity-desc">${esc(a.desc)}</div>` : ''}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `).join('')}
+
+    <div class="card-header" style="padding:16px 0 10px;">
+      <h2>花销记录</h2>
+      <span class="more" onclick="closeModal();addExpense('${trip.id}')">+ 记一笔</span>
+    </div>
+    ${expenses.length === 0 ? '<div style="font-size:12px;color:var(--text-3);padding:8px 0;">暂无花销</div>' : expenses.map(e => `
+      <div class="activity-item">
+        <div class="activity-time" style="width:auto;flex-shrink:0;">¥${parseFloat(e.amount).toFixed(0)}</div>
+        <div class="activity-body">
+          <div class="activity-title">${esc(e.note || catNames[e.category] || '花销')}</div>
+          <div class="activity-desc">${catNames[e.category] || e.category}${e.date ? ' · ' + formatDateFull(e.date) : ''}</div>
+        </div>
+        <button class="btn btn-sm btn-danger" style="padding:3px 8px;font-size:11px;flex-shrink:0;" onclick="event.stopPropagation();closeModal();deleteExpense('${trip.id}','${e.id}')">删除</button>
+      </div>
+    `).join('')}
+  `;
+}
+
+// ===== 想去清单 =====
+function renderWishlist() {
+  return `
+    <div class="page-header">
+      <h1>想去清单</h1>
+      <div class="subtitle">${appData.wishlist.length} 个心动目的地</div>
+    </div>
+    <div class="content">
+      ${appData.wishlist.length === 0 ? emptyState('还没有想去的地方', '把全世界装进你的清单吧', ICONS.heart) : appData.wishlist.map(w => `
+        <div class="card" style="display:flex;align-items:center;gap:12px;">
+          <div class="list-icon" style="background:var(--primary-bg);">${ICONS.location}</div>
+          <div class="list-body" style="cursor:pointer;" onclick="editWish('${w.id}')">
+            <div class="list-title">${esc(w.name)}</div>
+            <div class="list-desc">${esc(w.country || '')} · ${esc(w.note || '')}</div>
+          </div>
+          <span class="tag tag-wish">种草</span>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();editWish('${w.id}')">编辑</button>
+            <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteWish('${w.id}')">删除</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function emptyState(title, desc, iconSvg) {
+  return `<div class="card empty">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${iconSvg.replace(/<svg[^>]*>/, '').replace(/<\/svg>/, '')}</svg>
+    <div class="title">${title}</div>
+    <div class="desc">${desc}</div>
+  </div>`;
+}
+
+// ===== 旅行小记 =====
+function renderDiaries() {
+  const sorted = [...appData.diaries].sort((a, b) => new Date(b.date) - new Date(a.date));
+  const cards = sorted.map(d => renderDiaryCard(d)).join('');
+  return `
+    <div class="page-header">
+      <h1>旅行小记</h1>
+      <div class="subtitle">${sorted.length} 篇记录 · 留住途中的感动</div>
+    </div>
+    <div class="content">
+      ${sorted.length === 0 ? emptyState('还没有小记', '旅行中随时记下心情与风景', ICONS.book) : cards}
+    </div>
+  `;
+}
+
+function renderDiaryCard(diary) {
+  const name = appData.settings.name || '旅行者';
+  const initial = name.charAt(0);
+  let mediaHtml = '';
+  if (diary.media && diary.media.length > 0) {
+    const items = diary.media.map(m => {
+      const url = mediaCache[m.id];
+      if (m.type.startsWith('video')) {
+        return `<video src="${url || ''}" controls preload="metadata" onclick="event.stopPropagation();"></video>`;
+      } else {
+        return `<img src="${url || ''}" data-media-id="${m.id}" alt="" onclick="event.stopPropagation();viewMedia('${m.id}','${m.type}')">`;
+      }
+    }).join('');
+    mediaHtml = `<div class="diary-media">${items}</div>`;
+    // 异步加载未缓存的媒体
+    diary.media.forEach(async m => {
+      if (!mediaCache[m.id]) {
+        mediaCache[m.id] = await loadMedia(m.id);
+        const img = document.querySelector(`img[data-media-id="${m.id}"]`);
+        if (img) img.src = mediaCache[m.id];
+        const videos = document.querySelectorAll(`video[src=""]`);
+        videos.forEach(v => { if (v.closest('.diary-media')) v.src = mediaCache[m.id]; });
+      }
+    });
+  }
+
+  return `
+    <div class="card diary-card" onclick="editDiary('${diary.id}')">
+      <div class="diary-header">
+        <div class="diary-avatar">${esc(initial)}</div>
+        <div class="diary-meta">
+          <div class="diary-title">${esc(diary.title)}</div>
+          <div class="diary-date">${formatDateFull(diary.date)} · ${esc(diary.location || '')}</div>
+        </div>
+      </div>
+      <div class="diary-content">${esc(diary.content).replace(/\n/g, '<br>')}</div>
+      ${mediaHtml}
+    </div>
+  `;
+}
+
+function viewMedia(id, type) {
+  // 全屏查看媒体
+  const url = mediaCache[id];
+  if (!url) return;
+  showModal('查看', type.startsWith('video') ? `<video src="${url}" controls style="width:100%;border-radius:12px;"></video>` : `<img src="${url}" style="width:100%;border-radius:12px;">`, [{ text: '关闭', action: "closeModal();", class: 'btn btn-primary btn-block' }]);
+}
+
+// ===== 我的页面 =====
+function renderProfile() {
+  const totalMiles = totalFlightMiles();
+  const totalSpent = appData.trips.reduce((s, t) => s + (t.expenses ? t.expenses.reduce((ss, e) => ss + (parseFloat(e.amount) || 0), 0) : 0), 0);
+  return `
+    <div class="page-header">
+      <h1>我的</h1>
+      <div class="subtitle">管理数据与偏好</div>
+    </div>
+    <div class="content">
+      <div class="card" style="text-align:center;padding:28px 20px;">
+        <div style="width:80px;height:80px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:white;font-size:32px;font-weight:700;margin:0 auto 14px;">${esc((appData.settings.name || '旅').charAt(0))}</div>
+        <div style="font-size:18px;font-weight:600;">${esc(appData.settings.name)}</div>
+        <div style="font-size:13px;color:var(--text-2);margin-top:4px;">已累计飞行 ${totalMiles.toLocaleString()} 公里</div>
+        <div style="display:flex;justify-content:space-around;margin-top:20px;padding-top:20px;border-top:1px solid var(--border);">
+          <div><div style="font-size:22px;font-weight:700;color:var(--primary);">${appData.trips.length}</div><div style="font-size:11px;color:var(--text-3);">行程</div></div>
+          <div><div style="font-size:22px;font-weight:700;color:var(--purple);">${appData.wishlist.length}</div><div style="font-size:11px;color:var(--text-3);">想去</div></div>
+          <div><div style="font-size:22px;font-weight:700;color:var(--success);">¥${totalSpent.toFixed(0)}</div><div style="font-size:11px;color:var(--text-3);">已花</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="menu-item" onclick="switchPage('budget')">
+          <div class="menu-icon">${ICONS.wallet}</div>
+          <div class="menu-label">预算与花销</div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="switchPage('flights')">
+          <div class="menu-icon" style="background:var(--success-bg);">${ICONS.plane}</div>
+          <div class="menu-label">飞行记录</div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="switchPage('map')">
+          <div class="menu-icon" style="background:var(--purple-bg);">${ICONS.map}</div>
+          <div class="menu-label">旅行地图</div>
+          <div class="menu-arrow">›</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="menu-item" onclick="exportData()">
+          <div class="menu-icon" style="background:var(--success-bg);">${ICONS.download}</div>
+          <div class="menu-label">导出数据</div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="importData()">
+          <div class="menu-icon" style="background:var(--warning-bg);">${ICONS.upload}</div>
+          <div class="menu-label">导入数据</div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="editProfile()">
+          <div class="menu-icon">${ICONS.user}</div>
+          <div class="menu-label">编辑资料</div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="clearAllData()">
+          <div class="menu-icon" style="background:var(--danger-bg);">${ICONS.trash}</div>
+          <div class="menu-label">清空所有数据</div>
+          <div class="menu-arrow">›</div>
+        </div>
+      </div>
+
+      <div style="text-align:center;padding:12px 0 20px;color:var(--text-3);font-size:12px;">
+        旅行计划 v1.0.0 · 数据仅存储于本机
+      </div>
+    </div>
+  `;
+}
+
+// ===== 预算与花销 =====
+function renderBudget() {
+  const totalBudget = appData.trips.reduce((s, t) => s + (parseFloat(t.budget) || 0), 0);
+  const totalSpent = appData.trips.reduce((s, t) => s + (t.expenses ? t.expenses.reduce((ss, e) => ss + (parseFloat(e.amount) || 0), 0) : 0), 0);
+  const cats = {};
+  appData.trips.forEach(t => {
+    if (t.expenses) t.expenses.forEach(e => {
+      cats[e.category] = (cats[e.category] || 0) + (parseFloat(e.amount) || 0);
+    });
+  });
+  const catColors = { transport: '#2d6a4f', stay: '#52b788', food: '#b08968', ticket: '#74c69d', shopping: '#95d5b2', other: '#adb5bd' };
+  const catNames = { transport: '交通', stay: '住宿', food: '餐饮', ticket: '门票', shopping: '购物', other: '其他' };
+
+  // 收集所有花销记录（带行程名）
+  const allExpenses = [];
+  appData.trips.forEach(t => {
+    if (t.expenses) t.expenses.forEach(e => {
+      allExpenses.push({ ...e, tripId: t.id, tripTitle: t.title });
+    });
+  });
+  allExpenses.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+
+  return `
+    <div class="page-header">
+      <h1>预算与花销</h1>
+      <div class="subtitle">${appData.trips.length} 个行程 · 总支出 ¥${totalSpent.toFixed(0)}</div>
+    </div>
+    <div class="content">
+      <div class="card" style="border-left:3px solid var(--primary);">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+          <div style="font-size:12px;color:var(--text-2);">总预算</div>
+          <div style="font-size:12px;color:var(--text-2);">已支出</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;">
+          <div style="font-size:30px;font-weight:700;color:var(--text-1);">¥${totalBudget.toFixed(0)}</div>
+          <div style="font-size:24px;font-weight:700;color:var(--primary);">¥${totalSpent.toFixed(0)}</div>
+        </div>
+        <div style="margin-top:12px;background:var(--border);height:8px;border-radius:4px;overflow:hidden;">
+          <div style="height:100%;width:${totalBudget > 0 ? Math.min(100, totalSpent/totalBudget*100) : 0}%;background:var(--primary);border-radius:4px;transition:width 0.5s;"></div>
+        </div>
+      </div>
+
+      ${appData.trips.length === 0 ? emptyState('暂无预算数据', '创建行程后即可记录花销', ICONS.wallet) : `
+        <div class="card">
+          <div class="card-header"><h2>支出分类</h2></div>
+          <div id="budgetChart" style="height:180px;display:flex;align-items:center;justify-content:center;"></div>
+          ${Object.entries(cats).sort((a,b) => b[1]-a[1]).map(([k, v]) => `
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+              <div style="width:12px;height:12px;border-radius:50%;background:${catColors[k] || catColors.other};"></div>
+              <div style="flex:1;font-size:13px;">${catNames[k] || k}</div>
+              <div style="font-weight:600;">¥${v.toFixed(0)}</div>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="card" style="padding-bottom:24px;">
+          <div class="card-header">
+            <h2>花销明细</h2>
+            <span class="more" onclick="addExpense()">+ 记一笔</span>
+          </div>
+          ${allExpenses.length === 0 ? `
+            <div style="text-align:center;padding:20px;color:var(--text-3);font-size:13px;">
+              还没有花销记录<br>
+              <span style="color:var(--primary);cursor:pointer;" onclick="addExpense()">点击记一笔</span>
+            </div>
+          ` : allExpenses.map((e, idx) => `
+            <div class="list-item" style="padding:12px 0;">
+              <div class="list-icon" style="background:var(--bg);width:36px;height:36px;border-radius:8px;">
+                <div style="width:10px;height:10px;border-radius:50%;background:${catColors[e.category] || catColors.other};margin:auto;"></div>
+              </div>
+              <div class="list-body" style="cursor:pointer;" onclick="editExpense('${e.tripId}','${e.id}')">
+                <div class="list-title">${esc(e.note || catNames[e.category] || '花销')}</div>
+                <div class="list-desc">${esc(e.tripTitle || '')} · ${catNames[e.category] || e.category}${e.date ? ' · ' + formatDateFull(e.date) : ''}</div>
+              </div>
+              <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+                <div style="font-size:16px;font-weight:700;">¥${parseFloat(e.amount).toFixed(0)}</div>
+                <div style="display:flex;gap:4px;">
+                  <button class="btn btn-sm btn-secondary" style="padding:3px 8px;font-size:11px;" onclick="event.stopPropagation();editExpense('${e.tripId}','${e.id}')">编辑</button>
+                  <button class="btn btn-sm btn-danger" style="padding:3px 8px;font-size:11px;" onclick="event.stopPropagation();deleteExpense('${e.tripId}','${e.id}')">删除</button>
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h2>按行程</h2></div>
+          ${appData.trips.map(t => {
+            const spent = t.expenses ? t.expenses.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0) : 0;
+            const pct = t.budget > 0 ? Math.min(100, spent/t.budget*100) : 0;
+            return `
+              <div class="list-item" style="padding:12px 0;">
+                <div class="list-body">
+                  <div class="list-title">${esc(t.title)}</div>
+                  <div class="list-desc">预算 ¥${t.budget || 0} · 已花 ¥${spent.toFixed(0)}</div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-size:16px;font-weight:700;color:${pct > 90 ? 'var(--danger)' : pct > 70 ? 'var(--warning)' : 'var(--success)'}">${pct.toFixed(0)}%</div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `}
+    </div>
+  `;
+}
+
+function initBudgetChart() {
+  const cats = {};
+  appData.trips.forEach(t => {
+    if (t.expenses) t.expenses.forEach(e => {
+      cats[e.category] = (cats[e.category] || 0) + (parseFloat(e.amount) || 0);
+    });
+  });
+  const entries = Object.entries(cats).sort((a, b) => b[1] - a[1]);
+  if (entries.length === 0) {
+    $('budgetChart').innerHTML = '<div style="color:var(--text-3);font-size:13px;">暂无支出</div>';
+    return;
+  }
+  const total = entries.reduce((s, e) => s + e[1], 0);
+  const catColors = { transport: '#2d6a4f', stay: '#52b788', food: '#b08968', ticket: '#74c69d', shopping: '#95d5b2', other: '#adb5bd' };
+  // 简单环形图（SVG）
+  const r = 60;
+  let dashOffset = 0;
+  const circles = entries.map(([k, v]) => {
+    const pct = v / total;
+    const dash = pct * 2 * Math.PI * r;
+    const circle = `<circle cx="90" cy="90" r="${r}" fill="none" stroke="${catColors[k] || catColors.other}" stroke-width="18" stroke-dasharray="${dash} ${2*Math.PI*r}" stroke-dashoffset="-${dashOffset}" transform="rotate(-90 90 90)"/>`;
+    dashOffset += dash;
+    return circle;
+  }).join('');
+  $('budgetChart').innerHTML = `
+    <svg width="180" height="180" viewBox="0 0 180 180">
+      ${circles}
+      <text x="90" y="85" text-anchor="middle" font-size="12" fill="#9ca3af">总支出</text>
+      <text x="90" y="110" text-anchor="middle" font-size="20" font-weight="700" fill="#1d1d1f">¥${total.toFixed(0)}</text>
+    </svg>
+  `;
+}
+
+// ===== 飞行记录 =====
+function renderFlights() {
+  const total = totalFlightMiles();
+  return `
+    <div class="page-header">
+      <h1>飞行记录</h1>
+      <div class="subtitle">${appData.flights.length} 次飞行 · 累计 ${total.toLocaleString()} 公里</div>
+    </div>
+    <div class="content">
+      <div class="card" style="border-left:3px solid var(--primary);">
+        <div style="font-size:12px;color:var(--text-2);">累计飞行里程</div>
+        <div style="font-size:42px;font-weight:700;letter-spacing:-2px;margin:6px 0;color:var(--primary);">${(total / 10000).toFixed(2)}<span style="font-size:16px;font-weight:500;color:var(--text-2);"> 万公里</span></div>
+        <div style="font-size:12px;color:var(--text-3);">约等于绕赤道 ${(total / 40075).toFixed(2)} 圈</div>
+      </div>
+
+      ${appData.flights.length === 0 ? emptyState('还没有飞行记录', '添加航班，自动计算飞行距离', ICONS.plane) : appData.flights.slice().reverse().map(f => `
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <div style="font-size:12px;color:var(--text-3);cursor:pointer;" onclick="editFlight('${f.id}')">${formatDateFull(f.date)} · ${esc(f.flightNo || '未命名航班')} ✏️</div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();editFlight('${f.id}')">编辑</button>
+              <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteFlight('${f.id}')">删除</button>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="text-align:center;">
+              <div style="font-size:24px;font-weight:700;">${esc(f.from)}</div>
+              <div style="font-size:11px;color:var(--text-2);">${esc(f.fromCity || '')}</div>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;padding:0 12px;">
+              <div style="font-size:11px;color:var(--text-3);">${f.distance || 0} km</div>
+              <div style="width:100%;height:2px;background:var(--border);margin:6px 0;position:relative;">
+                <div style="position:absolute;top:-3px;left:50%;transform:translateX(-50%);">${ICONS.plane}</div>
+              </div>
+              <div style="font-size:10px;color:var(--primary);">${Math.round((f.distance || 0) / 900 * 10) / 10} h</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:24px;font-weight:700;">${esc(f.to)}</div>
+              <div style="font-size:11px;color:var(--text-2);">${esc(f.toCity || '')}</div>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function initFlightAnimation() {}
+
+// ===== 地图页 =====
+let amapInstance = null;
+let homeMapInstance = null;
+let mapMarkers = [];
+let geocoder = null;
+
+// 常见城市坐标缓存（高德坐标系 GCJ-02）
+const CITY_COORDS = {
+  '北京': [116.397428, 39.90923], '上海': [121.473701, 31.230416],
+  '广州': [113.264385, 23.129112], '深圳': [114.057868, 22.543099],
+  '成都': [104.065735, 30.659462], '杭州': [120.15507, 30.274085],
+  '西安': [108.948024, 34.263161], '重庆': [106.551557, 29.563009],
+  '武汉': [114.305393, 30.593098], '南京': [118.767413, 32.041544],
+  '京都': [135.768422, 35.011636], '东京': [139.691733, 35.689487],
+  '大阪': [135.502252, 34.693731], '雷克雅未克': [-21.942636, 64.146582],
+  '皇后镇': [168.662552, -45.031162], '圣托里尼': [25.460912, 36.393154],
+  '清迈': [98.985268, 18.795248], '曼谷': [100.501762, 13.756331],
+  '巴黎': [2.352222, 48.856614], '伦敦': [-0.127758, 51.507351],
+  '纽约': [-73.985428, 40.748817], '洛杉矶': [-118.243683, 34.052235],
+  '悉尼': [151.209296, -33.868820], '新加坡': [103.819836, 1.352083],
+  '首尔': [126.978415, 37.566535], '香港': [114.158918, 22.281631],
+  '迪拜': [55.270782, 25.204849], '伊斯坦布尔': [28.976458, 41.008584],
+  '雅典': [23.727539, 37.983810],
+  '拉萨': [91.11, 29.65], '日喀则': [88.88, 29.27], '亚东': [89.05, 27.44],
+  '堆纳乡': [89.08, 28.06],
+};
+
+function getCityCoord(cityName) {
+  // 先查缓存
+  if (CITY_COORDS[cityName]) return CITY_COORDS[cityName];
+  // 再查行程数据中的已有坐标
+  const trip = appData.trips.find(t => t.destination === cityName);
+  if (trip && trip.coord) return trip.coord;
+  // 返回 null 表示需要地理编码
+  return null;
+}
+
+async function geocodeCity(cityName) {
+  if (CITY_COORDS[cityName]) return CITY_COORDS[cityName];
+  if (!geocoder) {
+    try { geocoder = new AMap.Geocoder(); } catch(e) { return null; }
+  }
+  return new Promise(resolve => {
+    geocoder.getLocation(cityName, (status, result) => {
+      if (status === 'complete' && result.geocodes && result.geocodes.length > 0) {
+        const loc = result.geocodes[0].location;
+        const coord = [loc.lng, loc.lat];
+        CITY_COORDS[cityName] = coord; // 缓存
+        resolve(coord);
+      } else {
+        resolve(null);
+      }
+    });
+  });
+}
+
+function renderMapPage() {
+  const tripCount = appData.trips.length;
+  const wishCount = appData.wishlist.length;
+  return `
+    <div class="page-header">
+      <h1>旅行地图</h1>
+      <div class="subtitle">点亮你去过的每一个角落</div>
+    </div>
+    <div class="content">
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div id="travelMap" style="height:420px;"></div>
+      </div>
+      <div class="card" style="margin-top:12px;">
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="text" id="mapSearchInput" class="form-input" placeholder="搜索目的地..." style="flex:1;">
+          <button class="btn btn-primary" onclick="doMapSearch();" style="flex:none;padding:8px 14px;">搜索</button>
+        </div>
+      </div>
+      <div class="card" style="margin-top:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <h3 style="font-size:15px;">足迹列表</h3>
+          <div style="font-size:12px;color:var(--text-3);">${tripCount} 个足迹 · ${wishCount} 个想去</div>
+        </div>
+        ${tripCount === 0 ? '<div style="color:var(--text-3);font-size:13px;">还没有足迹，添加行程后地图会点亮</div>' : ''}
+        ${appData.trips.map(t => `
+          <div class="list-item" onclick="panToCity('${esc(t.destination || '')}');" style="cursor:pointer;">
+            <div class="list-icon" style="background:var(--primary-bg);">${ICONS.location}</div>
+            <div class="list-body">
+              <div class="list-title">${esc(t.destination || '未知')}</div>
+              <div class="list-desc">${esc(t.country || '')} · ${t.startDate || ''}</div>
+            </div>
+            <div style="color:var(--primary);font-size:20px;">✓</div>
+          </div>
+        `).join('')}
+        ${wishCount > 0 ? `
+          <div style="margin-top:12px;font-size:12px;color:var(--text-3);">想去的地方</div>
+          ${appData.wishlist.map(w => `
+            <div class="list-item" onclick="panToCity('${esc(w.name || '')}');" style="cursor:pointer;">
+              <div class="list-icon" style="background:var(--purple-bg);">${ICONS.heart}</div>
+              <div class="list-body">
+                <div class="list-title">${esc(w.name)}</div>
+                <div class="list-desc">${esc(w.country || '')}</div>
+              </div>
+              <div style="color:var(--warning);font-size:18px;">♡</div>
+            </div>
+          `).join('')}
+        ` : ''}
+      </div>
+    </div>
+  `;
+}
+
+async function initMap() {
+  const container = document.getElementById('travelMap');
+  if (!container) return;
+  // 销毁旧实例
+  if (amapInstance) { amapInstance.destroy(); amapInstance = null; }
+  mapMarkers = [];
+
+  try {
+    amapInstance = new AMap.Map('travelMap', {
+      zoom: 3,
+      center: [108, 34], // 中国中心
+      mapStyle: 'amap://styles/whitesmoke',
+      viewMode: '2D',
+    });
+
+    // 添加足迹标记
+    for (const trip of appData.trips) {
+      const city = trip.destination;
+      let coord = getCityCoord(city);
+      if (!coord) coord = await geocodeCity(city);
+      if (coord) {
+        const marker = new AMap.Marker({
+          position: coord,
+          title: city,
+          content: `<div style="background:var(--primary);color:white;font-size:11px;padding:3px 8px;border-radius:12px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.2);">${esc(city)}</div>`,
+          offset: new AMap.Pixel(-20, -15),
+        });
+        marker.on('click', () => {
+          amapInstance.setZoomAndCenter(10, coord);
+        });
+        amapInstance.add(marker);
+        mapMarkers.push(marker);
+      }
+    }
+
+    // 添加想去标记（空心心形样式）
+    for (const wish of appData.wishlist) {
+      const city = wish.name;
+      let coord = getCityCoord(city);
+      if (!coord) coord = await geocodeCity(city);
+      if (coord) {
+        const marker = new AMap.Marker({
+          position: coord,
+          title: city,
+          content: `<div style="background:#b08968;color:white;font-size:11px;padding:3px 8px;border-radius:12px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.2);">♡ ${esc(city)}</div>`,
+          offset: new AMap.Pixel(-20, -15),
+        });
+        amapInstance.add(marker);
+        mapMarkers.push(marker);
+      }
+    }
+
+    // 自动调整视野覆盖所有标记
+    if (mapMarkers.length > 0) {
+      amapInstance.setFitView(mapMarkers, false, [60, 60, 60, 60]);
+    }
+  } catch (e) {
+    console.error('地图初始化失败', e);
+    container.innerHTML = `<div style="height:420px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-2);padding:20px;">
+      <div style="font-size:15px;color:var(--danger);">地图加载失败</div>
+      <div style="font-size:13px;margin-top:6px;">请检查网络或高德 API Key 配置</div>
+    </div>`;
+  }
+}
+
+async function initHomeMap() {
+  const container = document.getElementById('homeMap');
+  if (!container) return;
+  if (homeMapInstance) { homeMapInstance.destroy(); homeMapInstance = null; }
+
+  try {
+    homeMapInstance = new AMap.Map('homeMap', {
+      zoom: 3,
+      center: [108, 34],
+      mapStyle: 'amap://styles/whitesmoke',
+      viewMode: '2D',
+    });
+
+    for (const trip of appData.trips) {
+      const city = trip.destination;
+      let coord = getCityCoord(city);
+      if (!coord) coord = await geocodeCity(city);
+      if (coord) {
+        const marker = new AMap.Marker({
+          position: coord,
+          content: `<div style="background:var(--primary);color:white;width:18px;height:18px;border-radius:50%;text-align:center;line-height:18px;font-size:10px;box-shadow:0 2px 4px rgba(0,0,0,0.15);">✓</div>`,
+          offset: new AMap.Pixel(-9, -9),
+        });
+        homeMapInstance.add(marker);
+      }
+    }
+
+    const allMarkers = homeMapInstance.getAllOverlays('marker');
+    if (allMarkers && allMarkers.length > 0) {
+      homeMapInstance.setFitView(allMarkers, false, [30, 30, 30, 30]);
+    }
+  } catch (e) {
+    console.error('首页地图初始化失败', e);
+  }
+}
+
+function panToCity(cityName) {
+  if (!amapInstance) return;
+  const coord = getCityCoord(cityName) || CITY_COORDS[cityName];
+  if (coord) {
+    amapInstance.setZoomAndCenter(10, coord);
+  } else {
+    geocodeCity(cityName).then(c => {
+      if (c) amapInstance.setZoomAndCenter(10, c);
+    });
+  }
+}
+
+async function doMapSearch() {
+  const input = document.getElementById('mapSearchInput');
+  if (!input) return;
+  const keyword = input.value.trim();
+  if (!keyword) return;
+  if (!amapInstance) return;
+
+  // 城市级别搜索优先用地理编码，更准确
+  const coord = await geocodeCity(keyword);
+  if (coord) {
+    amapInstance.setZoomAndCenter(12, coord);
+    const marker = new AMap.Marker({
+      position: coord,
+      title: keyword,
+      content: `<div style="background:var(--accent);color:white;font-size:12px;padding:4px 10px;border-radius:14px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.25);">${esc(keyword)}</div>`,
+      offset: new AMap.Pixel(-25, -18),
+    });
+    amapInstance.add(marker);
+    toast('定位到：' + keyword);
+    return;
+  }
+
+  // 降级用 POI 搜索
+  try {
+    const placeSearch = new AMap.PlaceSearch({ city: '全国', citylimit: false });
+    placeSearch.search(keyword, (status, result) => {
+      if (status === 'complete' && result.poiList && result.poiList.pois.length > 0) {
+        const poi = result.poiList.pois[0];
+        const c = [poi.location.lng, poi.location.lat];
+        amapInstance.setZoomAndCenter(12, c);
+        const marker = new AMap.Marker({
+          position: c,
+          title: poi.name,
+          content: `<div style="background:var(--accent);color:white;font-size:12px;padding:4px 10px;border-radius:14px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.25);">${esc(poi.name)}</div>`,
+          offset: new AMap.Pixel(-25, -18),
+        });
+        amapInstance.add(marker);
+        toast('找到：' + poi.name);
+      } else {
+        toast('未找到该地点');
+      }
+    });
+  } catch (e) {
+    toast('未找到该地点');
+  }
+}
+
+// ===== 弹窗系统 =====
+let modalContext = null;
+
+function showModal(title, content, actions = []) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay active';
+  overlay.id = 'modalOverlay';
+  overlay.innerHTML = `
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2>${title}</h2>
+        <button class="modal-close" onclick="closeModal()">×</button>
+      </div>
+      <div class="modal-body">${content}</div>
+      ${actions.length ? `<div style="display:flex;gap:10px;margin-top:20px;">${actions.map(a => {
+        let onClick = '';
+        if (typeof a.action === 'string') {
+          onClick = a.action.includes('closeModal') ? a.action : `${a.action}; closeModal();`;
+        } else {
+          onClick = `(${a.action.toString()})(); closeModal();`;
+        }
+        return `<button class="btn ${a.class || 'btn-secondary'}" style="flex:${a.block ? 1 : 'none'};" onclick="${onClick}">${a.text}</button>`;
+      }).join('')}</div>` : ''}
+    </div>
+  `;
+  overlay.addEventListener('click', closeModal);
+  document.body.appendChild(overlay);
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  modalContext = null;
+  const overlay = $('modalOverlay');
+  if (overlay) { overlay.remove(); document.body.style.overflow = ''; }
+}
+
+// ===== FAB 点击 =====
+function onFabClick() {
+  switch (currentPage) {
+    case 'home':
+    case 'trips':
+      editTrip();
+      break;
+    case 'wishlist':
+      editWish();
+      break;
+    case 'diaries':
+      editDiary();
+      break;
+    case 'flights':
+      editFlight();
+      break;
+    case 'budget':
+      addExpense();
+      break;
+    default:
+      editTrip();
+  }
+}
+
+// ===== 行程表单 =====
+function editTrip(tripId = null) {
+  const trip = tripId ? appData.trips.find(t => t.id === tripId) : null;
+  const title = trip ? '编辑行程' : '新建行程';
+  modalContext = { type: 'trip', tripId };
+
+  showModal(title, `
+    <div class="form-group">
+      <label class="form-label">行程名称</label>
+      <input type="text" class="form-input" id="tripTitle" value="${esc(trip ? trip.title : '')}" placeholder="例如：日本关西七日游">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">开始日期</label>
+        <input type="date" class="form-input" id="tripStart" value="${trip ? trip.startDate : ''}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">结束日期</label>
+        <input type="date" class="form-input" id="tripEnd" value="${trip ? trip.endDate : ''}">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">目的地城市</label>
+        <input type="text" class="form-input" id="tripDest" value="${esc(trip ? trip.destination : '')}" placeholder="例如：京都">
+      </div>
+      <div class="form-group">
+        <label class="form-label">国家</label>
+        <input type="text" class="form-input" id="tripCountry" value="${esc(trip ? trip.country : '')}" placeholder="例如：日本">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">总预算</label>
+      <input type="number" class="form-input" id="tripBudget" value="${trip ? trip.budget : ''}" placeholder="例如：10000">
+    </div>
+    <div class="form-group">
+      <label class="form-label">日程安排（可选）</label>
+      <div id="tripActivities">
+        ${trip && trip.activities ? trip.activities.map((a, idx) => `
+          <div style="display:flex;gap:8px;margin-bottom:8px;" data-idx="${idx}">
+            <input type="number" class="form-input" style="flex:0 0 60px;" value="${a.day}" placeholder="第几天">
+            <input type="time" class="form-input" style="flex:0 0 90px;" value="${a.time}">
+            <input type="text" class="form-input" value="${esc(a.title)}" placeholder="活动">
+            <input type="text" class="form-input" value="${esc(a.desc || '')}" placeholder="备注">
+          </div>
+        `).join('') : ''}
+      </div>
+      <button type="button" class="btn btn-sm btn-secondary" onclick="addActivityRow()">+ 添加日程</button>
+    </div>
+  `, [
+    { text: '删除', action: "if (modalContext && modalContext.tripId) deleteTrip(modalContext.tripId);", class: 'btn btn-danger', block: false },
+    { text: '保存', action: "saveTrip();", class: 'btn btn-primary', block: true }
+  ]);
+}
+
+function addActivityRow() {
+  const container = $('tripActivities');
+  const div = document.createElement('div');
+  div.style.cssText = 'display:flex;gap:8px;margin-bottom:8px;';
+  div.innerHTML = `
+    <input type="number" class="form-input" style="flex:0 0 60px;" placeholder="第几天">
+    <input type="time" class="form-input" style="flex:0 0 90px;">
+    <input type="text" class="form-input" placeholder="活动">
+    <input type="text" class="form-input" placeholder="备注">
+  `;
+  container.appendChild(div);
+}
+
+function saveTrip() {
+  const tripId = modalContext && modalContext.tripId ? modalContext.tripId : null;
+  const title = $('tripTitle').value.trim();
+  if (!title) return toast('请输入行程名称');
+  const activities = [];
+  $('tripActivities').querySelectorAll('div[data-idx], div:not([data-idx])').forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    if (inputs[2] && inputs[2].value.trim()) {
+      activities.push({
+        day: parseInt(inputs[0].value) || 1,
+        time: inputs[1].value || '',
+        title: inputs[2].value.trim(),
+        desc: (inputs[3] ? inputs[3].value.trim() : '')
+      });
+    }
+  });
+  const newTrip = {
+    id: tripId || uid(),
+    title,
+    startDate: $('tripStart').value,
+    endDate: $('tripEnd').value,
+    destination: $('tripDest').value.trim(),
+    country: $('tripCountry').value.trim(),
+    budget: parseFloat($('tripBudget').value) || 0,
+    activities,
+    expenses: tripId ? (appData.trips.find(t => t.id === tripId).expenses || []) : []
+  };
+  if (tripId) {
+    const idx = appData.trips.findIndex(t => t.id === tripId);
+    appData.trips[idx] = newTrip;
+  } else {
+    appData.trips.push(newTrip);
+  }
+  saveData();
+  renderApp();
+  toast('已保存');
+}
+
+function deleteTrip(id) {
+  appData.trips = appData.trips.filter(t => t.id !== id);
+  saveData();
+  renderApp();
+  toast('已删除');
+}
+
+// ===== 想去清单表单 =====
+function editWish(wishId = null) {
+  const wish = wishId ? appData.wishlist.find(w => w.id === wishId) : null;
+  modalContext = { type: 'wish', wishId };
+  showModal(wish ? '编辑想去' : '添加想去', `
+    <div class="form-group">
+      <label class="form-label">目的地</label>
+      <input type="text" class="form-input" id="wishName" value="${esc(wish ? wish.name : '')}" placeholder="例如：冰岛">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">国家</label>
+        <input type="text" class="form-input" id="wishCountry" value="${esc(wish ? wish.country : '')}" placeholder="例如：冰岛">
+      </div>
+      <div class="form-group">
+        <label class="form-label">分类</label>
+        <select class="form-select" id="wishCategory">
+          <option value="city" ${wish && wish.category === 'city' ? 'selected' : ''}>城市</option>
+          <option value="nature" ${wish && wish.category === 'nature' ? 'selected' : ''}>自然风光</option>
+          <option value="food" ${wish && wish.category === 'food' ? 'selected' : ''}>美食</option>
+          <option value="culture" ${wish && wish.category === 'culture' ? 'selected' : ''}>人文</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">备注</label>
+      <textarea class="form-textarea" id="wishNote" placeholder="为什么想去这里？">${esc(wish ? wish.note : '')}</textarea>
+    </div>
+  `, [
+    { text: '取消', action: "closeModal();", class: 'btn btn-secondary', block: true },
+    { text: '保存', action: "saveWish();", class: 'btn btn-primary', block: true }
+  ]);
+}
+
+function saveWish() {
+  const wishId = modalContext && modalContext.wishId ? modalContext.wishId : null;
+  const name = $('wishName').value.trim();
+  if (!name) return toast('请输入目的地');
+  const newWish = {
+    id: wishId || uid(),
+    name,
+    country: $('wishCountry').value.trim(),
+    category: $('wishCategory').value,
+    note: $('wishNote').value.trim()
+  };
+  if (wishId) {
+    const idx = appData.wishlist.findIndex(w => w.id === wishId);
+    appData.wishlist[idx] = newWish;
+  } else {
+    appData.wishlist.push(newWish);
+  }
+  saveData();
+  renderApp();
+  toast('已保存');
+}
+
+function deleteWish(id) {
+  appData.wishlist = appData.wishlist.filter(w => w.id !== id);
+  saveData();
+  renderApp();
+  toast('已删除');
+}
+
+// ===== 旅行小记表单 =====
+let currentDiaryMedia = [];
+
+function editDiary(diaryId = null) {
+  const diary = diaryId ? appData.diaries.find(d => d.id === diaryId) : null;
+  currentDiaryMedia = diary && diary.media ? [...diary.media] : [];
+  modalContext = { type: 'diary', diaryId };
+  showModal(diary ? '编辑小记' : '写旅行小记', `
+    <div class="form-group">
+      <label class="form-label">标题</label>
+      <input type="text" class="form-input" id="diaryTitle" value="${esc(diary ? diary.title : '')}" placeholder="例如：京都的黄昏">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">日期</label>
+        <input type="date" class="form-input" id="diaryDate" value="${diary ? diary.date : new Date().toISOString().split('T')[0]}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">地点</label>
+        <input type="text" class="form-input" id="diaryLocation" value="${esc(diary ? diary.location : '')}" placeholder="例如：京都，日本">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">内容</label>
+      <textarea class="form-textarea" id="diaryContent" placeholder="写下此刻的感受...">${esc(diary ? diary.content : '')}</textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">照片 / 视频</label>
+      <div class="media-grid" id="diaryMediaGrid">
+        ${currentDiaryMedia.map(m => `<div class="media-item" data-id="${m.id}" onclick="removeDiaryMedia('${m.id}')"><img src="${mediaCache[m.id] || ''}" alt=""></div>`).join('')}
+        <label class="media-add">
+          ${ICONS.camera}
+          <span style="font-size:11px;">添加</span>
+          <input type="file" accept="image/*,video/*" multiple style="display:none;" onchange="handleDiaryMedia(this)">
+        </label>
+      </div>
+    </div>
+  `, [
+    { text: '删除', action: "if (modalContext && modalContext.diaryId) deleteDiary(modalContext.diaryId);", class: 'btn btn-danger' },
+    { text: '保存', action: "saveDiary();", class: 'btn btn-primary', block: true }
+  ]);
+  // 加载已有媒体的 blob url
+  if (diary && diary.media) {
+    diary.media.forEach(async m => {
+      if (!mediaCache[m.id]) mediaCache[m.id] = await loadMedia(m.id);
+      const el = $(`diaryMediaGrid`).querySelector(`[data-id="${m.id}"] img`);
+      if (el) el.src = mediaCache[m.id];
+    });
+  }
+}
+
+async function handleDiaryMedia(input) {
+  const files = Array.from(input.files);
+  for (const file of files) {
+    const id = uid();
+    await saveMedia(id, file);
+    mediaCache[id] = URL.createObjectURL(file);
+    currentDiaryMedia.push({ id, type: file.type });
+  }
+  refreshDiaryMediaGrid();
+}
+
+function refreshDiaryMediaGrid() {
+  const grid = $('diaryMediaGrid');
+  if (!grid) return;
+  grid.innerHTML = currentDiaryMedia.map(m => `
+    <div class="media-item" data-id="${m.id}" onclick="removeDiaryMedia('${m.id}')">
+      ${m.type.startsWith('video') ? `<video src="${mediaCache[m.id] || ''}"></video>` : `<img src="${mediaCache[m.id] || ''}" alt="">`}
+    </div>
+  `).join('') + `
+    <label class="media-add">
+      ${ICONS.camera}
+      <span style="font-size:11px;">添加</span>
+      <input type="file" accept="image/*,video/*" multiple style="display:none;" onchange="handleDiaryMedia(this)">
+    </label>
+  `;
+}
+
+function removeDiaryMedia(id) {
+  currentDiaryMedia = currentDiaryMedia.filter(m => m.id !== id);
+  if (mediaCache[id]) URL.revokeObjectURL(mediaCache[id]);
+  delete mediaCache[id];
+  refreshDiaryMediaGrid();
+}
+
+async function saveDiary() {
+  const diaryId = modalContext && modalContext.diaryId ? modalContext.diaryId : null;
+  const title = $('diaryTitle').value.trim();
+  if (!title) return toast('请输入标题');
+  const newDiary = {
+    id: diaryId || uid(),
+    title,
+    date: $('diaryDate').value,
+    location: $('diaryLocation').value.trim(),
+    content: $('diaryContent').value.trim(),
+    media: currentDiaryMedia
+  };
+  if (diaryId) {
+    const old = appData.diaries.find(d => d.id === diaryId);
+    // 删除被移除的旧媒体
+    if (old && old.media) {
+      for (const m of old.media) {
+        if (!currentDiaryMedia.find(cm => cm.id === m.id)) {
+          await deleteMedia(m.id);
+          if (mediaCache[m.id]) URL.revokeObjectURL(mediaCache[m.id]);
+          delete mediaCache[m.id];
+        }
+      }
+    }
+    const idx = appData.diaries.findIndex(d => d.id === diaryId);
+    appData.diaries[idx] = newDiary;
+  } else {
+    appData.diaries.push(newDiary);
+  }
+  saveData();
+  renderApp();
+  toast('已保存');
+}
+
+async function deleteDiary(id) {
+  const diary = appData.diaries.find(d => d.id === id);
+  if (diary && diary.media) {
+    for (const m of diary.media) {
+      await deleteMedia(m.id);
+      if (mediaCache[m.id]) URL.revokeObjectURL(mediaCache[m.id]);
+      delete mediaCache[m.id];
+    }
+  }
+  appData.diaries = appData.diaries.filter(d => d.id !== id);
+  saveData();
+  renderApp();
+  toast('已删除');
+}
+
+// ===== 航班表单 =====
+function editFlight(flightId = null) {
+  const f = flightId ? appData.flights.find(x => x.id === flightId) : null;
+  modalContext = { type: 'flight', flightId };
+  showModal(flightId ? '编辑航班' : '添加航班', `
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">出发机场代码</label>
+        <input type="text" class="form-input" id="flightFrom" value="${esc(f ? f.from : '')}" placeholder="PEK">
+      </div>
+      <div class="form-group">
+        <label class="form-label">到达机场代码</label>
+        <input type="text" class="form-input" id="flightTo" value="${esc(f ? f.to : '')}" placeholder="NRT">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">出发城市</label>
+        <input type="text" class="form-input" id="flightFromCity" value="${esc(f ? f.fromCity : '')}" placeholder="北京">
+      </div>
+      <div class="form-group">
+        <label class="form-label">到达城市</label>
+        <input type="text" class="form-input" id="flightToCity" value="${esc(f ? f.toCity : '')}" placeholder="东京">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">航班号</label>
+        <input type="text" class="form-input" id="flightNo" value="${esc(f ? f.flightNo : '')}" placeholder="CA123">
+      </div>
+      <div class="form-group">
+        <label class="form-label">日期</label>
+        <input type="date" class="form-input" id="flightDate" value="${f ? f.date : new Date().toISOString().split('T')[0]}">
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--text-3);line-height:1.5;">
+      支持的机场代码：PEK(北京)、SHA/PVG(上海)、CAN(广州)、HKG(香港)、NRT/HND(东京)、ICN(首尔)、SIN(新加坡)、BKK(曼谷)、LHR(伦敦)、CDG(巴黎)、JFK(纽约)、LAX(洛杉矶)、SYD(悉尼) 等
+    </div>
+  `, [
+    { text: '取消', action: "closeModal();", class: 'btn btn-secondary', block: true },
+    { text: '保存', action: "saveFlight();", class: 'btn btn-primary', block: true }
+  ]);
+}
+
+function saveFlight() {
+  const flightId = modalContext && modalContext.flightId ? modalContext.flightId : null;
+  const from = $('flightFrom').value.trim().toUpperCase();
+  const to = $('flightTo').value.trim().toUpperCase();
+  if (!from || !to) return toast('请输入机场代码');
+  const distance = calcFlightDistance(from, to);
+  const newFlight = {
+    id: flightId || uid(),
+    from,
+    to,
+    fromCity: $('flightFromCity').value.trim(),
+    toCity: $('flightToCity').value.trim(),
+    flightNo: $('flightNo').value.trim(),
+    date: $('flightDate').value,
+    distance
+  };
+  if (flightId) {
+    const idx = appData.flights.findIndex(x => x.id === flightId);
+    appData.flights[idx] = newFlight;
+  } else {
+    appData.flights.push(newFlight);
+  }
+  saveData();
+  renderApp();
+  toast(distance ? `已保存 · 飞行距离 ${distance} km` : '已保存（未能识别机场代码，未计算距离）');
+}
+
+function deleteFlight(id) {
+  appData.flights = appData.flights.filter(f => f.id !== id);
+  saveData();
+  renderApp();
+  toast('已删除');
+}
+
+// ===== 花销管理 =====
+function addExpense(tripId = null) {
+  if (appData.trips.length === 0) {
+    toast('请先创建行程');
+    return;
+  }
+  const tripOptions = appData.trips.map(t => `<option value="${t.id}" ${tripId === t.id ? 'selected' : ''}>${esc(t.title)}</option>`).join('');
+  const today = new Date().toISOString().split('T')[0];
+
+  showModal('记一笔花销', `
+    <div class="form-group">
+      <label class="form-label">所属行程</label>
+      <select class="form-select" id="expTrip">
+        ${tripOptions}
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">金额</label>
+        <input type="number" class="form-input" id="expAmount" placeholder="0" step="0.01" inputmode="decimal">
+      </div>
+      <div class="form-group">
+        <label class="form-label">分类</label>
+        <select class="form-select" id="expCategory">
+          <option value="transport">交通</option>
+          <option value="stay">住宿</option>
+          <option value="food">餐饮</option>
+          <option value="ticket">门票</option>
+          <option value="shopping">购物</option>
+          <option value="other">其他</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">日期</label>
+      <input type="date" class="form-input" id="expDate" value="${today}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">备注</label>
+      <input type="text" class="form-input" id="expNote" placeholder="例如：京都到东京新干线">
+    </div>
+  `, [
+    { text: '取消', action: "closeModal();", class: 'btn btn-secondary', block: true },
+    { text: '保存', action: "saveExpense();", class: 'btn btn-primary', block: true }
+  ]);
+}
+
+function saveExpense() {
+  const tripId = $('expTrip').value;
+  const amount = parseFloat($('expAmount').value);
+  if (!amount || amount <= 0) return toast('请输入有效金额');
+  const category = $('expCategory').value;
+  const date = $('expDate').value;
+  const note = $('expNote').value.trim();
+
+  const trip = appData.trips.find(t => t.id === tripId);
+  if (!trip) return toast('行程不存在');
+  if (!trip.expenses) trip.expenses = [];
+  trip.expenses.push({
+    id: uid(),
+    amount,
+    category,
+    date,
+    note
+  });
+  saveData();
+  renderApp();
+  toast('已记录 ¥' + amount.toFixed(0));
+}
+
+function deleteExpense(tripId, expenseId) {
+  const trip = appData.trips.find(t => t.id === tripId);
+  if (!trip || !trip.expenses) return;
+  trip.expenses = trip.expenses.filter(e => e.id !== expenseId);
+  saveData();
+  renderApp();
+  toast('已删除');
+}
+
+function editExpense(tripId, expenseId) {
+  const trip = appData.trips.find(t => t.id === tripId);
+  if (!trip || !trip.expenses) return toast('行程未找到');
+  const exp = trip.expenses.find(e => e.id === expenseId);
+  if (!exp) return toast('记录未找到');
+
+  const tripOptions = appData.trips.map(t => `<option value="${t.id}" ${tripId === t.id ? 'selected' : ''}>${esc(t.title)}</option>`).join('');
+
+  modalContext = { type: 'expense', tripId, expenseId };
+  showModal('编辑花销', `
+    <div class="form-group">
+      <label class="form-label">所属行程</label>
+      <select class="form-select" id="expTrip">${tripOptions}</select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">金额</label>
+        <input type="number" class="form-input" id="expAmount" value="${exp.amount}" step="0.01" inputmode="decimal">
+      </div>
+      <div class="form-group">
+        <label class="form-label">分类</label>
+        <select class="form-select" id="expCategory">
+          <option value="transport" ${exp.category === 'transport' ? 'selected' : ''}>交通</option>
+          <option value="stay" ${exp.category === 'stay' ? 'selected' : ''}>住宿</option>
+          <option value="food" ${exp.category === 'food' ? 'selected' : ''}>餐饮</option>
+          <option value="ticket" ${exp.category === 'ticket' ? 'selected' : ''}>门票</option>
+          <option value="shopping" ${exp.category === 'shopping' ? 'selected' : ''}>购物</option>
+          <option value="other" ${exp.category === 'other' ? 'selected' : ''}>其他</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">日期</label>
+      <input type="date" class="form-input" id="expDate" value="${exp.date || ''}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">备注</label>
+      <input type="text" class="form-input" id="expNote" value="${esc(exp.note || '')}" placeholder="例如：京都到东京新干线">
+    </div>
+  `, [
+    { text: '删除', action: "if (modalContext) deleteExpense(modalContext.tripId, modalContext.expenseId);", class: 'btn btn-danger' },
+    { text: '保存', action: "saveExpenseEdit();", class: 'btn btn-primary', block: true }
+  ]);
+}
+
+function saveExpenseEdit() {
+  const tripId = modalContext && modalContext.tripId ? modalContext.tripId : null;
+  const expenseId = modalContext && modalContext.expenseId ? modalContext.expenseId : null;
+  if (!tripId || !expenseId) return;
+  const trip = appData.trips.find(t => t.id === tripId);
+  if (!trip || !trip.expenses) return;
+  const exp = trip.expenses.find(e => e.id === expenseId);
+  if (!exp) return;
+
+  const amount = parseFloat($('expAmount').value);
+  if (!amount || amount <= 0) return toast('请输入有效金额');
+
+  // 如果改了所属行程，需要迁移
+  const newTripId = $('expTrip').value;
+  if (newTripId !== tripId) {
+    trip.expenses = trip.expenses.filter(e => e.id !== expenseId);
+    const newTrip = appData.trips.find(t => t.id === newTripId);
+    if (!newTrip.expenses) newTrip.expenses = [];
+    newTrip.expenses.push({
+      id: expenseId,
+      amount,
+      category: $('expCategory').value,
+      date: $('expDate').value,
+      note: $('expNote').value.trim()
+    });
+  } else {
+    exp.amount = amount;
+    exp.category = $('expCategory').value;
+    exp.date = $('expDate').value;
+    exp.note = $('expNote').value.trim();
+  }
+  saveData();
+  renderApp();
+  toast('已更新');
+}
+
+// ===== 个人资料 =====
+function editProfile() {
+  showModal('编辑资料', `
+    <div class="form-group">
+      <label class="form-label">昵称</label>
+      <input type="text" class="form-input" id="profileName" value="${esc(appData.settings.name)}" placeholder="你的昵称">
+    </div>
+  `, [
+    { text: '取消', action: "closeModal();", class: 'btn btn-secondary', block: true },
+    { text: '保存', action: "saveProfile();", class: 'btn btn-primary', block: true }
+  ]);
+}
+
+function saveProfile() {
+  appData.settings.name = $('profileName').value.trim() || '旅行者';
+  saveData();
+  renderApp();
+  toast('已保存');
+}
+
+// ===== 数据导出/导入 =====
+function exportData() {
+  const blob = new Blob([JSON.stringify(appData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `travel-app-backup-${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('数据已导出');
+}
+
+function importData() {
+  showModal('导入数据', `
+    <div class="form-group">
+      <label class="form-label">选择备份文件</label>
+      <input type="file" class="form-input" id="importFile" accept="application/json">
+    </div>
+    <div style="font-size:12px;color:var(--danger);line-height:1.5;">
+      注意：导入会覆盖当前所有数据，请确保已备份。
+    </div>
+  `, [
+    { text: '取消', action: "closeModal();", class: 'btn btn-secondary', block: true },
+    { text: '导入', action: "doImport();", class: 'btn btn-primary', block: true }
+  ]);
+}
+
+function doImport() {
+  const file = $('importFile').files[0];
+  if (!file) return toast('请选择文件');
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      appData = { ...DEFAULT_DATA, ...data };
+      saveData();
+      // 重新加载媒体
+      mediaCache = {};
+      for (const d of appData.diaries) {
+        if (d.media) {
+          for (const m of d.media) {
+            if (!mediaCache[m.id]) mediaCache[m.id] = await loadMedia(m.id);
+          }
+        }
+      }
+      renderApp();
+      toast('导入成功');
+    } catch (err) {
+      toast('文件格式错误');
+      console.error(err);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function clearAllData() {
+  showModal('确认清空', `
+    <div style="font-size:14px;line-height:1.6;">
+      确定要清空所有数据吗？<br>
+      <span style="color:var(--danger);">此操作不可恢复，建议先导出备份。</span>
+    </div>
+  `, [
+    { text: '取消', action: "closeModal();", class: 'btn btn-secondary', block: true },
+    { text: '确认清空', action: "confirmClearAll();", class: 'btn btn-danger', block: true }
+  ]);
+}
+
+function confirmClearAll() {
+  appData = JSON.parse(JSON.stringify(DEFAULT_DATA));
+  saveData();
+  if (db) {
+    const tx = db.transaction('media', 'readwrite');
+    tx.objectStore('media').clear();
+  }
+  mediaCache = {};
+  renderApp();
+  toast('已清空');
+}
+
+// ===== 初始化 =====
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    db = await openDB();
+  } catch (e) {
+    console.warn('IndexedDB 不可用', e);
+  }
+  loadData();
+  renderApp();
+});
+
+// ===== PWA 注册 =====
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then((reg) => console.log('Service Worker registered', reg.scope))
+      .catch((err) => console.log('SW error', err));
+  });
+}
+</script>
+</body>
+</html>

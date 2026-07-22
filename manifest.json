@@ -1,0 +1,50 @@
+{
+  "name": "旅行计划 - 记录你的脚步",
+  "short_name": "旅行计划",
+  "description": "个人专属旅行计划工具：行程规划、目的地收藏、预算记录、飞行里程、旅行小记",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#faf9f7",
+  "theme_color": "#2d6a4f",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "categories": ["travel", "lifestyle", "utilities"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "新建行程",
+      "short_name": "新行程",
+      "description": "快速添加旅行计划",
+      "url": "./index.html#trips",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "写旅行小记",
+      "short_name": "小记",
+      "description": "记录旅途感悟",
+      "url": "./index.html#diaries",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
