@@ -1008,11 +1008,15 @@ function renderTripCard(trip) {
 
 function openXhs(keyword) {
   var searchKey = keyword + ' 攻略';
-  var webUrl = 'https://www.xiaohongshu.com/search_result?keyword=' + encodeURIComponent(searchKey);
+  var webUrl = 'https://www.xiaohongshu.com/search_result?keyword=' + encodeURIComponent(searchKey) + '&source=web_explore_feed';
   closeModal();
-  setTimeout(function() {
-    window.open(webUrl, '_blank');
-  }, 200);
+  var a = document.createElement('a');
+  a.href = webUrl;
+  a.target = '_blank';
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 
 function openTripDetail(tripId) {
