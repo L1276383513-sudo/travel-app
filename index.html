@@ -1006,6 +1006,27 @@ function renderTripCard(trip) {
   `;
 }
 
+function openXhs(keyword) {
+  var searchKey = keyword + ' 攻略';
+  var appUrl = 'xhsdiscover://search/result?keyword=' + encodeURIComponent(searchKey);
+  var webUrl = 'https://www.xiaohongshu.com/search_result?keyword=' + encodeURIComponent(searchKey);
+  // 尝试打开小红书 App，1.5秒后打不开就跳网页版
+  var timer = setTimeout(function() {
+    window.open(webUrl, '_blank');
+  }, 1500);
+  var iframe = document.createElement('iframe');
+  iframe.style.display = 'none';
+  iframe.src = appUrl;
+  document.body.appendChild(iframe);
+  setTimeout(function() {
+    document.body.removeChild(iframe);
+  }, 2000);
+  // 如果成功打开App，清除跳转网页的定时器
+  window.addEventListener('pagehide', function() {
+    clearTimeout(timer);
+  }, { once: true });
+}
+
 function openTripDetail(tripId) {
   // 弹窗显示行程详情（日程 + 花销）
   const trip = appData.trips.find(t => t.id === tripId);
@@ -1035,7 +1056,7 @@ function renderTripDetailContent(trip) {
       <div style="font-size:13px;color:var(--text-2);">${formatDateFull(trip.startDate)} - ${formatDateFull(trip.endDate)} · 共 ${totalDays} 天</div>
       ${trip.budget > 0 ? `<div style="font-size:13px;color:var(--text-2);margin-top:4px;">预算 ¥${trip.budget} · 已花 ¥${spent.toFixed(0)}</div>` : ''}
       ${trip.note ? `<div style="font-size:13px;color:var(--text-2);margin-top:8px;background:var(--primary-bg);padding:10px 12px;border-radius:10px;line-height:1.5;">${esc(trip.note)}</div>` : ''}
-      ${trip.destination ? `<a href="https://www.xiaohongshu.com/search_result?keyword=${encodeURIComponent(trip.destination + ' 攻略')}" target="_blank" style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:13px;color:#ff2442;font-weight:600;padding:8px 12px;background:#fff0f3;border-radius:10px;text-decoration:none;"><svg viewBox="0 0 24 24" width="16" height="16" fill="#ff2442"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><circle cx="12" cy="12" r="3"/></svg> 搜索「${esc(trip.destination)}攻略」小红书笔记</a>` : ''}
+      ${trip.destination ? `<div onclick="openXhs('${esc(trip.destination)}')" style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:13px;color:#ff2442;font-weight:600;padding:8px 12px;background:#fff0f3;border-radius:10px;cursor:pointer;"><svg viewBox="0 0 24 24" width="16" height="16" fill="#ff2442"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><circle cx="12" cy="12" r="3"/></svg> 搜索「${esc(trip.destination)}攻略」小红书笔记</div>` : ''}
     </div>
     <div class="card-header" style="padding:0 0 10px;">
       <h2>每日日程</h2>
