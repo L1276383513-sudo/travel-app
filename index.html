@@ -479,47 +479,16 @@ async function deleteMedia(id) {
 // ===== localStorage 数据 =====
 function loadData() {
   try {
-    const saved = localStorage.getItem('travelAppData_v5');
+    const saved = localStorage.getItem('travelAppData_v6');
     if (saved) {
       const parsed = JSON.parse(saved);
       appData = { ...DEFAULT_DATA, ...parsed };
       return;
     }
   } catch (e) { console.error(e); }
-  // 首次使用：预置示例数据
+  // 首次使用：预置数据
   appData = {
     trips: [
-      {
-        id: uid(),
-        title: '日本关西七日游',
-        startDate: '2026-08-15',
-        endDate: '2026-08-21',
-        destination: '京都',
-        country: '日本',
-        budget: 15000,
-        activities: [
-          { day: 1, time: '14:00', title: '抵达关西机场', desc: '乘坐 Haruka 前往京都' },
-          { day: 1, time: '18:00', title: '鸭川漫步', desc: '看夕阳' },
-          { day: 2, time: '09:00', title: '清水寺', desc: '早起避开人群' },
-          { day: 2, time: '15:00', title: '伏见稻荷大社', desc: '千本鸟居' }
-        ],
-        expenses: [
-          { id: uid(), category: 'transport', amount: 3200, note: '机票', date: '2026-08-15' },
-          { id: uid(), category: 'stay', amount: 4200, note: '京都民宿 6 晚', date: '2026-08-15' },
-          { id: uid(), category: 'food', amount: 1800, note: '怀石料理', date: '2026-08-16' }
-        ]
-      },
-      {
-        id: uid(),
-        title: '冰岛极光之旅',
-        startDate: '2026-12-20',
-        endDate: '2026-12-28',
-        destination: '雷克雅未克',
-        country: '冰岛',
-        budget: 25000,
-        activities: [],
-        expenses: []
-      },
       {
         id: uid(),
         title: '西藏-亚东县',
@@ -545,25 +514,9 @@ function loadData() {
         expenses: []
       }
     ],
-    wishlist: [
-      { id: uid(), name: '皇后镇', country: '新西兰', category: 'nature', note: '跳伞 +  Milford Sound' },
-      { id: uid(), name: '圣托里尼', country: '希腊', category: 'city', note: '看最美日落' },
-      { id: uid(), name: '清迈', country: '泰国', category: 'food', note: '水灯节' }
-    ],
-    flights: [
-      { id: uid(), from: 'PEK', to: 'KIX', fromCity: '北京', toCity: '大阪', flightNo: 'CA927', date: '2026-08-15', distance: 1785 },
-      { id: uid(), from: 'KIX', to: 'PEK', fromCity: '大阪', toCity: '北京', flightNo: 'CA928', date: '2026-08-21', distance: 1785 }
-    ],
-    diaries: [
-      {
-        id: uid(),
-        title: '路上的风景',
-        date: '2026-08-16',
-        location: '京都，日本',
-        content: '黄昏时分，车行驶在通往山区的公路上。远处的山峦被夕阳染成了紫色，天空从橙红渐变到深蓝。\n\n这一刻突然明白，旅行的意义不在于打卡多少景点，而是这些猝不及防的感动。',
-        media: []
-      }
-    ],
+    wishlist: [],
+    flights: [],
+    diaries: [],
     checklists: [
       {
         id: uid(), name: '城市轻旅行', icon: 'city', color: '#d8f3dc',
@@ -758,7 +711,7 @@ function loadData() {
 }
 
 function saveData() {
-  localStorage.setItem('travelAppData_v5', JSON.stringify(appData));
+  localStorage.setItem('travelAppData_v6', JSON.stringify(appData));
 }
 
 // ===== 工具函数 =====
@@ -1082,6 +1035,7 @@ function renderTripDetailContent(trip) {
       <div style="font-size:13px;color:var(--text-2);">${formatDateFull(trip.startDate)} - ${formatDateFull(trip.endDate)} · 共 ${totalDays} 天</div>
       ${trip.budget > 0 ? `<div style="font-size:13px;color:var(--text-2);margin-top:4px;">预算 ¥${trip.budget} · 已花 ¥${spent.toFixed(0)}</div>` : ''}
       ${trip.note ? `<div style="font-size:13px;color:var(--text-2);margin-top:8px;background:var(--primary-bg);padding:10px 12px;border-radius:10px;line-height:1.5;">${esc(trip.note)}</div>` : ''}
+      ${trip.destination ? `<a href="https://www.xiaohongshu.com/search_result?keyword=${encodeURIComponent(trip.destination + ' 攻略')}" target="_blank" style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:13px;color:#ff2442;font-weight:600;padding:8px 12px;background:#fff0f3;border-radius:10px;text-decoration:none;"><svg viewBox="0 0 24 24" width="16" height="16" fill="#ff2442"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><circle cx="12" cy="12" r="3"/></svg> 搜索「${esc(trip.destination)}攻略」小红书笔记</a>` : ''}
     </div>
     <div class="card-header" style="padding:0 0 10px;">
       <h2>每日日程</h2>
