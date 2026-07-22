@@ -420,7 +420,7 @@ const DEFAULT_DATA = {
   flights: [],
   diaries: [],
   checklists: [],
-  settings: { name: '旅行者', currency: 'CNY' }
+  settings: { name: 'Jojo 邓', currency: 'CNY' }
 };
 
 let appData = JSON.parse(JSON.stringify(DEFAULT_DATA));
@@ -752,7 +752,7 @@ function loadData() {
         ]
       }
     ],
-    settings: { name: '旅行者', currency: 'CNY' }
+    settings: { name: 'Jojo 邓', currency: 'CNY' }
   };
   saveData();
 }
@@ -1169,7 +1169,7 @@ function renderDiaries() {
 }
 
 function renderDiaryCard(diary) {
-  const name = appData.settings.name || '旅行者';
+  const name = appData.settings.name || 'Jojo 邓';
   const initial = name.charAt(0);
   let mediaHtml = '';
   if (diary.media && diary.media.length > 0) {
@@ -2634,7 +2634,7 @@ function editProfile() {
 }
 
 function saveProfile() {
-  appData.settings.name = $('profileName').value.trim() || '旅行者';
+  appData.settings.name = $('profileName').value.trim() || 'Jojo 邓';
   saveData();
   renderApp();
   toast('已保存');
