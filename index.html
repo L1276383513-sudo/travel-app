@@ -323,6 +323,38 @@
     /* 地图容器 */
     #travelMap, #homeMap { border-radius: var(--radius); overflow: hidden; }
 
+    /* 清单模块 */
+    .scene-card {
+      display: inline-flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 12px 14px; border-radius: 14px; min-width: 80px;
+      cursor: pointer; transition: all 0.2s;
+      border: 2px solid transparent;
+    }
+    .scene-card.active { border-color: var(--primary); }
+    .scene-card-icon { width: 28px; height: 28px; }
+    .scene-card-icon svg { width: 28px; height: 28px; }
+    .scene-card-name { font-size: 11px; font-weight: 600; white-space: nowrap; }
+
+    .check-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .check-item:last-child { border-bottom: none; }
+    .check-box {
+      width: 22px; height: 22px; border-radius: 6px;
+      border: 2px solid var(--text-3); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .check-box.checked {
+      background: var(--primary); border-color: var(--primary);
+      color: white;
+    }
+    .check-box.checked svg { stroke: white; }
+    .check-name { font-size: 14px; flex: 1; }
+    .check-name.checked { color: var(--text-3); text-decoration: line-through; }
+    .check-actions { display: flex; gap: 4px; }
+
     /* 隐藏滚动条 */
     ::-webkit-scrollbar { display: none; }
 
@@ -377,7 +409,8 @@ const ICONS = {
   location: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
   settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
   download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
-  upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>'
+  upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
+  checklist: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'
 };
 
 // ===== 数据 =====
@@ -386,6 +419,7 @@ const DEFAULT_DATA = {
   wishlist: [],
   flights: [],
   diaries: [],
+  checklists: [],
   settings: { name: '旅行者', currency: 'CNY' }
 };
 
@@ -445,7 +479,7 @@ async function deleteMedia(id) {
 // ===== localStorage 数据 =====
 function loadData() {
   try {
-    const saved = localStorage.getItem('travelAppData_v4');
+    const saved = localStorage.getItem('travelAppData_v5');
     if (saved) {
       const parsed = JSON.parse(saved);
       appData = { ...DEFAULT_DATA, ...parsed };
@@ -530,13 +564,201 @@ function loadData() {
         media: []
       }
     ],
+    checklists: [
+      {
+        id: uid(), name: '城市轻旅行', icon: 'city', color: '#d8f3dc',
+        items: [
+          { id: uid(), name: '防晒霜 SPF50+', checked: false },
+          { id: uid(), name: '遮阳帽', checked: false },
+          { id: uid(), name: '墨镜', checked: false },
+          { id: uid(), name: '充电宝', checked: false },
+          { id: uid(), name: '唇釉', checked: false },
+          { id: uid(), name: '口红', checked: false },
+          { id: uid(), name: '粉饼', checked: false },
+          { id: uid(), name: '遮瑕', checked: false },
+          { id: uid(), name: '眉笔', checked: false },
+          { id: uid(), name: '卸妆水', checked: false },
+          { id: uid(), name: '面膜', checked: false },
+          { id: uid(), name: '湿巾', checked: false },
+          { id: uid(), name: '小香包', checked: false },
+          { id: uid(), name: '丝巾（拍照用）', checked: false },
+          { id: uid(), name: '平底鞋', checked: false },
+          { id: uid(), name: '小挎包', checked: false }
+        ]
+      },
+      {
+        id: uid(), name: '户外徒步', icon: 'hiking', color: '#f0e6d3',
+        items: [
+          { id: uid(), name: '登山杖', checked: false },
+          { id: uid(), name: '冲锋衣', checked: false },
+          { id: uid(), name: '速干裤', checked: false },
+          { id: uid(), name: '徒步鞋', checked: false },
+          { id: uid(), name: '防晒帽', checked: false },
+          { id: uid(), name: '防晒霜', checked: false },
+          { id: uid(), name: '墨镜', checked: false },
+          { id: uid(), name: '头灯/手电', checked: false },
+          { id: uid(), name: '急救包', checked: false },
+          { id: uid(), name: '创可贴', checked: false },
+          { id: uid(), name: '止汗喷雾', checked: false },
+          { id: uid(), name: '驱蚊液', checked: false },
+          { id: uid(), name: '保温水壶', checked: false },
+          { id: uid(), name: '能量棒', checked: false },
+          { id: uid(), name: '雨衣', checked: false },
+          { id: uid(), name: '防风手套', checked: false },
+          { id: uid(), name: '登山袜', checked: false },
+          { id: uid(), name: '护膝', checked: false },
+          { id: uid(), name: '头发绑带', checked: false },
+          { id: uid(), name: '干发喷雾', checked: false }
+        ]
+      },
+      {
+        id: uid(), name: '高原边境', icon: 'plateau', color: '#dbeafe',
+        items: [
+          { id: uid(), name: '羽绒服', checked: false },
+          { id: uid(), name: '冲锋衣', checked: false },
+          { id: uid(), name: '保暖内衣', checked: false },
+          { id: uid(), name: '抓绒帽', checked: false },
+          { id: uid(), name: '防风面罩', checked: false },
+          { id: uid(), name: '防晒霜 SPF50+（高原强）', checked: false },
+          { id: uid(), name: '墨镜', checked: false },
+          { id: uid(), name: '唇膏（防干裂）', checked: false },
+          { id: uid(), name: '保温水壶', checked: false },
+          { id: uid(), name: '高反药（红景天）', checked: false },
+          { id: uid(), name: '葡萄糖', checked: false },
+          { id: uid(), name: '感冒药', checked: false },
+          { id: uid(), name: '巧克力', checked: false },
+          { id: uid(), name: '保温杯', checked: false },
+          { id: uid(), name: '防滑鞋', checked: false },
+          { id: uid(), name: '身份证+边防证', checked: false },
+          { id: uid(), name: '充电宝', checked: false },
+          { id: uid(), name: '暖宝宝', checked: false }
+        ]
+      },
+      {
+        id: uid(), name: '自驾公路', icon: 'car', color: '#fef3c7',
+        items: [
+          { id: uid(), name: '驾照', checked: false },
+          { id: uid(), name: '车载充电器', checked: false },
+          { id: uid(), name: '导航手机架', checked: false },
+          { id: uid(), name: '车载急救包', checked: false },
+          { id: uid(), name: '充气泵', checked: false },
+          { id: uid(), name: '遮阳帘', checked: false },
+          { id: uid(), name: '零食', checked: false },
+          { id: uid(), name: '矿泉水', checked: false },
+          { id: uid(), name: '纸巾', checked: false },
+          { id: uid(), name: '雨伞', checked: false },
+          { id: uid(), name: '防晒霜', checked: false },
+          { id: uid(), name: '墨镜', checked: false },
+          { id: uid(), name: '舒适平底鞋', checked: false },
+          { id: uid(), name: '湿巾', checked: false },
+          { id: uid(), name: '垃圾袋', checked: false }
+        ]
+      },
+      {
+        id: uid(), name: '海滩度假', icon: 'beach', color: '#e0f2fe',
+        items: [
+          { id: uid(), name: '防晒霜 SPF50+', checked: false },
+          { id: uid(), name: '防晒喷雾', checked: false },
+          { id: uid(), name: '泳衣 2套', checked: false },
+          { id: uid(), name: '沙滩巾', checked: false },
+          { id: uid(), name: '遮阳帽', checked: false },
+          { id: uid(), name: '墨镜', checked: false },
+          { id: uid(), name: '浮潜面镜', checked: false },
+          { id: uid(), name: '防水手机袋', checked: false },
+          { id: uid(), name: '沙滩鞋', checked: false },
+          { id: uid(), name: '防晒衣', checked: false },
+          { id: uid(), name: '驱蚊液', checked: false },
+          { id: uid(), name: '止汗喷雾', checked: false },
+          { id: uid(), name: '身体乳', checked: false },
+          { id: uid(), name: '晒后修复面膜', checked: false },
+          { id: uid(), name: '润唇膏', checked: false },
+          { id: uid(), name: '小风扇', checked: false },
+          { id: uid(), name: '防水包', checked: false },
+          { id: uid(), name: '护发素（海水伤发）', checked: false }
+        ]
+      },
+      {
+        id: uid(), name: '寒冬滑雪', icon: 'ski', color: '#f3e8ff',
+        items: [
+          { id: uid(), name: '滑雪服', checked: false },
+          { id: uid(), name: '滑雪镜', checked: false },
+          { id: uid(), name: '保暖内衣 2套', checked: false },
+          { id: uid(), name: '抓绒衣', checked: false },
+          { id: uid(), name: '滑雪手套', checked: false },
+          { id: uid(), name: '滑雪帽', checked: false },
+          { id: uid(), name: '护脸面罩', checked: false },
+          { id: uid(), name: '暖宝宝 10片', checked: false },
+          { id: uid(), name: '保温杯', checked: false },
+          { id: uid(), name: '润唇膏', checked: false },
+          { id: uid(), name: '护手霜', checked: false },
+          { id: uid(), name: '保湿面膜', checked: false },
+          { id: uid(), name: '羽绒服', checked: false },
+          { id: uid(), name: '雪地靴', checked: false },
+          { id: uid(), name: '发热袜', checked: false },
+          { id: uid(), name: '围巾', checked: false },
+          { id: uid(), name: '冻伤膏', checked: false },
+          { id: uid(), name: '能量棒', checked: false },
+          { id: uid(), name: '巧克力', checked: false }
+        ]
+      },
+      {
+        id: uid(), name: '商务差旅', icon: 'business', color: '#fce7f3',
+        items: [
+          { id: uid(), name: '笔记本电脑+充电器', checked: false },
+          { id: uid(), name: '商务正装 1套', checked: false },
+          { id: uid(), name: '公文包', checked: false },
+          { id: uid(), name: '名片夹', checked: false },
+          { id: uid(), name: '口红', checked: false },
+          { id: uid(), name: '粉饼', checked: false },
+          { id: uid(), name: '遮瑕', checked: false },
+          { id: uid(), name: '眉笔', checked: false },
+          { id: uid(), name: '高跟鞋', checked: false },
+          { id: uid(), name: '舒适通勤鞋', checked: false },
+          { id: uid(), name: '充电宝', checked: false },
+          { id: uid(), name: '投影转接头', checked: false },
+          { id: uid(), name: 'U盘', checked: false },
+          { id: uid(), name: '笔+笔记本', checked: false },
+          { id: uid(), name: '折叠衣架', checked: false },
+          { id: uid(), name: '洗衣袋', checked: false },
+          { id: uid(), name: '便携挂烫机', checked: false },
+          { id: uid(), name: '小香水', checked: false },
+          { id: uid(), name: '丝巾（提升气场）', checked: false }
+        ]
+      },
+      {
+        id: uid(), name: '长途跨国', icon: 'international', color: '#fde68a',
+        items: [
+          { id: uid(), name: '护照+签证复印件', checked: false },
+          { id: uid(), name: '旅行保险单', checked: false },
+          { id: uid(), name: '转换插头（万能）', checked: false },
+          { id: uid(), name: '充电宝', checked: false },
+          { id: uid(), name: '颈枕', checked: false },
+          { id: uid(), name: '眼罩+耳塞', checked: false },
+          { id: uid(), name: '行李牌', checked: false },
+          { id: uid(), name: '压缩袋', checked: false },
+          { id: uid(), name: '洗衣袋', checked: false },
+          { id: uid(), name: '折叠衣架', checked: false },
+          { id: uid(), name: '速干毛巾', checked: false },
+          { id: uid(), name: '便携洗护套装', checked: false },
+          { id: uid(), name: '常用药包（感冒/肠胃/过敏）', checked: false },
+          { id: uid(), name: '创可贴', checked: false },
+          { id: uid(), name: '防晒霜', checked: false },
+          { id: uid(), name: '保湿喷雾', checked: false },
+          { id: uid(), name: '面霜+身体乳', checked: false },
+          { id: uid(), name: '小锁', checked: false },
+          { id: uid(), name: '雨伞', checked: false },
+          { id: uid(), name: '拖鞋', checked: false },
+          { id: uid(), name: '指甲刀套装', checked: false }
+        ]
+      }
+    ],
     settings: { name: '旅行者', currency: 'CNY' }
   };
   saveData();
 }
 
 function saveData() {
-  localStorage.setItem('travelAppData_v4', JSON.stringify(appData));
+  localStorage.setItem('travelAppData_v5', JSON.stringify(appData));
 }
 
 // ===== 工具函数 =====
@@ -613,7 +835,7 @@ function renderTabBar() {
   const tabs = [
     { id: 'home', label: '首页', icon: ICONS.home },
     { id: 'trips', label: '行程', icon: ICONS.map },
-    { id: 'wishlist', label: '想去', icon: ICONS.heart },
+    { id: 'checklists', label: '清单', icon: ICONS.checklist },
     { id: 'diaries', label: '小记', icon: ICONS.book },
     { id: 'profile', label: '我的', icon: ICONS.user }
   ];
@@ -652,6 +874,7 @@ function renderPage() {
     case 'home': return renderHome();
     case 'trips': return renderTrips();
     case 'wishlist': return renderWishlist();
+    case 'checklists': return renderChecklists();
     case 'diaries': return renderDiaries();
     case 'profile': return renderProfile();
     case 'budget': return renderBudget();
@@ -1030,6 +1253,11 @@ function renderProfile() {
           <div class="menu-label">旅行地图</div>
           <div class="menu-arrow">›</div>
         </div>
+        <div class="menu-item" onclick="switchPage('checklists')">
+          <div class="menu-icon" style="background:var(--primary-bg);">${ICONS.checklist}</div>
+          <div class="menu-label">必备清单</div>
+          <div class="menu-arrow">›</div>
+        </div>
       </div>
 
       <div class="card">
@@ -1251,6 +1479,267 @@ function renderFlights() {
 }
 
 function initFlightAnimation() {}
+
+// ===== 必备品清单 =====
+const SCENE_ICONS = {
+  city: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>',
+  hiking: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3l4 8 5-5 2 6"/><path d="M4 21l4-8 4 4 6-6 4 10"/></svg>',
+  plateau: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 22L12 2l10 20"/><path d="M6 12h12"/></svg>',
+  car: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14v-5l-2-5H7l-2 5v5z"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><path d="M3 17h18"/></svg>',
+  beach: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 22c2.5-2.5 6-3 10-1s7 1 10-1"/><path d="M12 2v8"/><path d="M8 4l4-2 4 2"/></svg>',
+  ski: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 22h20"/><path d="M6 12l4-8"/><circle cx="8" cy="4" r="2"/><path d="M14 12l6 4"/></svg>',
+  business: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v3"/></svg>',
+  international: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20"/><path d="M12 2a15 15 0 0 0 0 20"/></svg>',
+  custom: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
+};
+
+let activeChecklistId = null;
+
+function renderChecklists() {
+  const lists = appData.checklists || [];
+  const active = activeChecklistId ? lists.find(l => l.id === activeChecklistId) : null;
+
+  return `
+    <div class="page-header">
+      <h1>必备清单</h1>
+      <div class="subtitle">${lists.length} 个场景 · 量身定制的打包清单</div>
+    </div>
+    <div class="content">
+      <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;margin-bottom:16px;-webkit-overflow-scrolling:touch;">
+        ${lists.map(l => `
+          <div class="scene-card ${active && active.id === l.id ? 'active' : ''}"
+               style="background:${l.color || '#f0f0f0'};"
+               onclick="selectChecklist('${l.id}')">
+            <div class="scene-card-icon">${SCENE_ICONS[l.icon] || SCENE_ICONS.custom}</div>
+            <div class="scene-card-name">${esc(l.name)}</div>
+          </div>
+        `).join('')}
+        <div class="scene-card" style="background:#f0f0f0;opacity:0.7;" onclick="createChecklist()">
+          <div class="scene-card-icon">${ICONS.plus}</div>
+          <div class="scene-card-name">自定义</div>
+        </div>
+      </div>
+
+      ${active ? renderChecklistItems(active) : `
+        <div class="card" style="text-align:center;padding:30px;color:var(--text-2);">
+          <div style="font-size:15px;font-weight:600;margin-bottom:8px;">选择一个场景</div>
+          <div style="font-size:13px;">点击上方卡片查看对应清单</div>
+        </div>
+      `}
+    </div>
+  `;
+}
+
+function renderChecklistItems(list) {
+  const checkedCount = list.items.filter(i => i.checked).length;
+  const totalCount = list.items.length;
+  const pct = totalCount > 0 ? Math.round(checkedCount / totalCount * 100) : 0;
+
+  return `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div>
+          <div style="font-size:16px;font-weight:700;">${esc(list.name)}</div>
+          <div style="font-size:13px;color:var(--text-2);">已准备 ${checkedCount} / ${totalCount} 项</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-size:14px;font-weight:700;color:${pct >= 100 ? 'var(--primary)' : pct > 50 ? 'var(--success)' : 'var(--warning)'};">${pct}%</div>
+          <button class="btn btn-sm btn-secondary" onclick="resetChecklist('${list.id}')">重置</button>
+        </div>
+      </div>
+      <div class="progress-bar" style="margin-bottom:16px;">
+        <div class="progress-fill" style="width:${pct}%;background:${pct >= 100 ? 'var(--primary)' : pct > 50 ? 'var(--success)' : 'var(--warning)'}"></div>
+      </div>
+      ${list.items.map(item => `
+        <div class="check-item">
+          <div class="check-box ${item.checked ? 'checked' : ''}" onclick="toggleCheckItem('${list.id}','${item.id}')">
+            ${item.checked ? '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>' : ''}
+          </div>
+          <div class="check-name ${item.checked ? 'checked' : ''}">${esc(item.name)}</div>
+          <div class="check-actions">
+            <button class="btn btn-sm btn-secondary" onclick="editChecklistItem('${list.id}','${item.id}')" style="padding:3px 6px;font-size:11px;">编辑</button>
+            <button class="btn btn-sm btn-danger" onclick="removeChecklistItem('${list.id}','${item.id}')" style="padding:3px 6px;font-size:11px;">删除</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function selectChecklist(listId) {
+  activeChecklistId = listId;
+  renderApp();
+}
+
+function toggleCheckItem(listId, itemId) {
+  const list = appData.checklists.find(l => l.id === listId);
+  if (!list) return;
+  const item = list.items.find(i => i.id === itemId);
+  if (!item) return;
+  item.checked = !item.checked;
+  saveData();
+  renderApp();
+}
+
+function resetChecklist(listId) {
+  const list = appData.checklists.find(l => l.id === listId);
+  if (!list) return;
+  list.items.forEach(i => i.checked = false);
+  saveData();
+  renderApp();
+  toast('清单已重置');
+}
+
+function addChecklistItem() {
+  const lists = appData.checklists || [];
+  if (lists.length === 0) { toast('请先创建一个清单场景'); return; }
+  const listOptions = lists.map(l => `<option value="${l.id}" ${activeChecklistId === l.id ? 'selected' : ''}>${esc(l.name)}</option>`).join('');
+
+  modalContext = { type: 'checklistItem' };
+  showModal('添加物品', `
+    <div class="form-group">
+      <label class="form-label">所属清单</label>
+      <select class="form-select" id="itemList">${listOptions}</select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">物品名称</label>
+      <input type="text" class="form-input" id="itemName" placeholder="例如：防晒霜">
+    </div>
+  `, [
+    { text: '保存', action: "saveChecklistItem();", class: 'btn btn-primary', block: true },
+    { text: '取消', action: "closeModal();", class: 'btn btn-secondary', block: true }
+  ]);
+}
+
+function saveChecklistItem() {
+  const listId = $('itemList').value;
+  const name = $('itemName').value.trim();
+  if (!name) return toast('请输入物品名称');
+  const list = appData.checklists.find(l => l.id === listId);
+  if (!list) return;
+  list.items.push({ id: uid(), name, checked: false });
+  activeChecklistId = listId;
+  saveData();
+  renderApp();
+  toast('已添加');
+}
+
+function editChecklistItem(listId, itemId) {
+  const list = appData.checklists.find(l => l.id === listId);
+  if (!list) return;
+  const item = list.items.find(i => i.id === itemId);
+  if (!item) return;
+  modalContext = { type: 'checklistItemEdit', listId, itemId };
+  showModal('编辑物品', `
+    <div class="form-group">
+      <label class="form-label">物品名称</label>
+      <input type="text" class="form-input" id="editItemName" value="${esc(item.name)}">
+    </div>
+  `, [
+    { text: '保存', action: "saveChecklistItemEdit();", class: 'btn btn-primary', block: true },
+    { text: '删除', action: "deleteChecklistItem();", class: 'btn btn-danger' },
+    { text: '取消', action: "closeModal();", class: 'btn btn-secondary' }
+  ]);
+}
+
+function saveChecklistItemEdit() {
+  const listId = modalContext.listId;
+  const itemId = modalContext.itemId;
+  const list = appData.checklists.find(l => l.id === listId);
+  if (!list) return;
+  const item = list.items.find(i => i.id === itemId);
+  if (!item) return;
+  const name = $('editItemName').value.trim();
+  if (!name) return toast('请输入名称');
+  item.name = name;
+  saveData();
+  renderApp();
+  toast('已更新');
+}
+
+function deleteChecklistItem() {
+  const listId = modalContext.listId;
+  const itemId = modalContext.itemId;
+  const list = appData.checklists.find(l => l.id === listId);
+  if (!list) return;
+  list.items = list.items.filter(i => i.id !== itemId);
+  saveData();
+  renderApp();
+  toast('已删除');
+}
+
+function removeChecklistItem(listId, itemId) {
+  const list = appData.checklists.find(l => l.id === listId);
+  if (!list) return;
+  list.items = list.items.filter(i => i.id !== itemId);
+  saveData();
+  renderApp();
+  toast('已删除');
+}
+
+function createChecklist() {
+  modalContext = { type: 'checklistCreate' };
+  showModal('创建清单场景', `
+    <div class="form-group">
+      <label class="form-label">场景名称</label>
+      <input type="text" class="form-input" id="newChecklistName" placeholder="例如：露营过夜">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">场景图标</label>
+        <select class="form-select" id="newChecklistIcon">
+          <option value="city">城市</option>
+          <option value="hiking">徒步</option>
+          <option value="plateau">高原</option>
+          <option value="car">自驾</option>
+          <option value="beach">海滩</option>
+          <option value="ski">滑雪</option>
+          <option value="business">商务</option>
+          <option value="international">长途</option>
+          <option value="custom">自定义</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">卡片颜色</label>
+        <select class="form-select" id="newChecklistColor">
+          <option value="#d8f3dc">森林绿</option>
+          <option value="#f0e6d3">沙漠色</option>
+          <option value="#dbeafe">天空蓝</option>
+          <option value="#fef3c7">公路金</option>
+          <option value="#e0f2fe">海洋蓝</option>
+          <option value="#f3e8ff">冰雪紫</option>
+          <option value="#fce7f3">玫瑰粉</option>
+          <option value="#fde68a">日落橙</option>
+          <option value="#f0f0f0">灰白</option>
+        </select>
+      </div>
+    </div>
+  `, [
+    { text: '创建', action: "saveNewChecklist();", class: 'btn btn-primary', block: true },
+    { text: '取消', action: "closeModal();", class: 'btn btn-secondary', block: true }
+  ]);
+}
+
+function saveNewChecklist() {
+  const name = $('newChecklistName').value.trim();
+  if (!name) return toast('请输入场景名称');
+  const icon = $('newChecklistIcon').value;
+  const color = $('newChecklistColor').value;
+  const newList = { id: uid(), name, icon, color, items: [] };
+  appData.checklists.push(newList);
+  activeChecklistId = newList.id;
+  saveData();
+  renderApp();
+  toast('清单已创建');
+}
+
+function deleteChecklist(listId) {
+  appData.checklists = appData.checklists.filter(l => l.id !== listId);
+  if (activeChecklistId === listId) activeChecklistId = null;
+  saveData();
+  renderApp();
+  toast('场景已删除');
+}
 
 // ===== 地图页 =====
 let amapInstance = null;
@@ -1565,6 +2054,9 @@ function onFabClick() {
       break;
     case 'wishlist':
       editWish();
+      break;
+    case 'checklists':
+      addChecklistItem();
       break;
     case 'diaries':
       editDiary();
