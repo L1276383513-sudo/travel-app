@@ -479,7 +479,7 @@ async function deleteMedia(id) {
 // ===== localStorage 数据 =====
 function loadData() {
   try {
-    const saved = localStorage.getItem('travelAppData_v6');
+    const saved = localStorage.getItem('travelAppData_v7');
     if (saved) {
       const parsed = JSON.parse(saved);
       appData = { ...DEFAULT_DATA, ...parsed };
@@ -510,6 +510,29 @@ function loadData() {
           { day: 2, time: '14:00', title: '庞达石绘', desc: '当地人文项目体验' },
           { day: 3, time: '06:00', title: '卓木拉日雪山', desc: '"干城章嘉新娘"，可飞无人机。拉萨→亚东县堆纳乡约6小时，途经普莫雍错-库拉岗日-多情措' },
           { day: 3, time: '15:00', title: '错朗湖', desc: '卓木拉日和吉楚锥柯之间' }
+        ],
+        expenses: []
+      },
+      {
+        id: uid(),
+        title: 'G219拉萨以西·新藏线',
+        startDate: '',
+        endDate: '',
+        destination: '阿里',
+        country: '中国',
+        budget: 20000,
+        note: '国之大道G219 · 拉萨以西才是真正的西藏 · 全程高海拔自驾 · 需边防证（日喀则/阿里/山南）· 建议组队出发',
+        activities: [
+          { day: 0, time: '', title: '行前须知', desc: '边防证需办：日喀则、阿里、山南地区。建议组队，备足油（见到加油站就加），携带红景天/葡萄糖/巧克力。全程平均海拔4500m+' },
+          { day: 1, time: '', title: '拉萨→羊卓雍措→普莫雍措→康马', desc: '拉萨出发，翻越岗巴拉山口看羊卓雍措（4441m），继续至普莫雍措（5010m，世界最高淡水湖），夜宿康马县' },
+          { day: 2, time: '', title: '康马→塔日山垭口→岗巴→冲巴雍措', desc: '翻越G219最高点塔日山垭口（5500m），至岗巴县看冲巴雍措，远眺喜马拉雅群峰' },
+          { day: 3, time: '', title: '岗巴→定结→珠峰大本营', desc: '经定结县前往珠峰，走珠峰108道拐，加乌拉垭口同时眺望5座8000米级雪山（珠峰、洛子峰、马卡鲁、卓奥友、希夏邦马）' },
+          { day: 4, time: '', title: '珠峰→吉隆', desc: '珠峰出发经希夏邦马峰（8012m）、佩枯措，至吉隆沟。吉隆大峡谷、乃夏村，海拔骤降植被丰富' },
+          { day: 5, time: '', title: '吉隆→帕羊', desc: '离开吉隆沟重返高原，经帕羊镇，沿途藏野驴/藏羚羊出没，高原荒漠地貌' },
+          { day: 6, time: '', title: '帕羊→普兰→玛旁雍错→冈仁波齐', desc: '抵达圣湖玛旁雍错（4588m）和鬼湖拉昂措，远眺纳木那尼峰（7694m）。冈仁波齐（6714m）——"世界中心"，多宗教朝圣圣地' },
+          { day: 7, time: '', title: '冈仁波齐→扎达土林→古格王朝', desc: '扎达土林异星地貌，古格王朝遗址千年废墟，日落时分最为震撼。建议在扎达住一晚' },
+          { day: 8, time: '', title: '扎达→狮泉河→日土→班公湖', desc: '至狮泉河（阿里地区行署），继续至日土县班公湖，领取G219勇士证书。班公湖中印界湖，鸟岛众多' },
+          { day: 9, time: '', title: '日土→多玛乡→界山达坂', desc: '穿越羌塘无人区边缘，经多玛乡（最后加油点），翻越界山达坂（5347m），进入新疆境内' }
         ],
         expenses: []
       }
@@ -711,7 +734,7 @@ function loadData() {
 }
 
 function saveData() {
-  localStorage.setItem('travelAppData_v6', JSON.stringify(appData));
+  localStorage.setItem('travelAppData_v7', JSON.stringify(appData));
 }
 
 // ===== 工具函数 =====
@@ -1732,6 +1755,10 @@ const CITY_COORDS = {
   '雅典': [23.727539, 37.983810],
   '拉萨': [91.11, 29.65], '日喀则': [88.88, 29.27], '亚东': [89.05, 27.44],
   '堆纳乡': [89.08, 28.06],
+  '阿里': [80.10, 32.50], '狮泉河': [80.09, 32.50], '珠峰': [86.92, 27.99],
+  '冈仁波齐': [81.31, 31.07], '扎达': [79.80, 31.48], '吉隆': [85.32, 28.33],
+  '普兰': [81.17, 30.32], '日土': [79.71, 33.39], '康马': [89.68, 28.27],
+  '岗巴': [88.53, 28.27], '定结': [87.77, 28.36], '帕羊': [84.69, 30.84],
 };
 
 function getCityCoord(cityName) {
