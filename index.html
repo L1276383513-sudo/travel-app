@@ -856,6 +856,7 @@ function renderPage() {
     case 'budget': return renderBudget();
     case 'flights': return renderFlights();
     case 'map': return renderMapPage();
+    case 'guides': return renderGuides();
     default: return renderHome();
   }
 }
@@ -1240,6 +1241,11 @@ function renderProfile() {
         <div class="menu-item" onclick="switchPage('map')">
           <div class="menu-icon" style="background:var(--purple-bg);">${ICONS.map}</div>
           <div class="menu-label">旅行地图</div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="switchPage('guides')">
+          <div class="menu-icon" style="background:#fef3c7;">${ICONS.book}</div>
+          <div class="menu-label">路书</div>
           <div class="menu-arrow">›</div>
         </div>
         <div class="menu-item" onclick="switchPage('checklists')">
@@ -1728,6 +1734,94 @@ function deleteChecklist(listId) {
   saveData();
   renderApp();
   toast('场景已删除');
+}
+
+// ===== 路书页 =====
+const GUIDES = [
+  {
+    id: 'g219',
+    title: 'G219拉萨以西·新藏线',
+    subtitle: '国之大道 · 拉萨以西才是真正的西藏',
+    color: '#fef3c7',
+    banner: '🏔️',
+    summary: '全程约2000km · 9-10天 · 平均海拔4500m+ · 需边防证',
+    note: '边防证需办：日喀则、阿里、山南地区。建议组队，备足油（见到加油站就加），携带红景天/葡萄糖/巧克力。全程平均海拔4500m+，多玛乡至三十里营房全程无信号。',
+    days: [
+      { day: 1, title: '拉萨→羊卓雍措→普莫雍措→康马', desc: '拉萨出发，翻越岗巴拉山口看羊卓雍措（4441m），继续至普莫雍措（5010m，世界最高淡水湖），夜宿康马县', highlights: ['羊卓雍措', '普莫雍措', '岗巴拉山口'] },
+      { day: 2, title: '康马→塔日山垭口→岗巴→冲巴雍措', desc: '翻越G219最高点塔日山垭口（5500m），至岗巴县看冲巴雍措，远眺喜马拉雅群峰', highlights: ['塔日山垭口5500m', '冲巴雍措', '喜马拉雅群峰'] },
+      { day: 3, title: '岗巴→定结→珠峰大本营', desc: '经定结县前往珠峰，走珠峰108道拐，加乌拉垭口同时眺望5座8000米级雪山', highlights: ['珠峰108道拐', '加乌拉垭口', '5座8000m级雪山'] },
+      { day: 4, title: '珠峰→希夏邦马→佩枯措→吉隆', desc: '珠峰出发经希夏邦马峰（8012m）、佩枯措，至吉隆沟。吉隆大峡谷、乃夏村，海拔骤降植被丰富', highlights: ['希夏邦马峰', '佩枯措', '吉隆大峡谷', '乃夏村'] },
+      { day: 5, title: '吉隆→帕羊', desc: '离开吉隆沟重返高原，经帕羊镇，沿途藏野驴/藏羚羊出没，高原荒漠地貌', highlights: ['藏野驴', '藏羚羊', '高原荒漠'] },
+      { day: 6, title: '帕羊→普兰→玛旁雍错→冈仁波齐', desc: '圣湖玛旁雍错（4588m）和鬼湖拉昂措，远眺纳木那尼峰（7694m）。冈仁波齐（6714m）——"世界中心"', highlights: ['玛旁雍错', '拉昂措', '纳木那尼峰', '冈仁波齐'] },
+      { day: 7, title: '冈仁波齐→扎达土林→古格王朝', desc: '扎达土林异星地貌，古格王朝遗址千年废墟，日落时分最为震撼。建议扎达住一晚', highlights: ['扎达土林', '古格王朝遗址', '异星地貌'] },
+      { day: 8, title: '扎达→狮泉河→日土→班公湖', desc: '至狮泉河（阿里行署），继续至日土县班公湖，领取G219勇士证书。班公湖中印界湖', highlights: ['狮泉河', '班公湖', 'G219勇士证书', '鸟岛'] },
+      { day: 9, title: '日土→多玛乡→界山达坂→新疆', desc: '穿越羌塘无人区边缘，经多玛乡（最后加油点），翻越界山达坂（5347m），进入新疆', highlights: ['羌塘无人区', '多玛乡加油', '界山达坂5347m'] }
+    ]
+  },
+  {
+    id: 'yadong',
+    title: '西藏-亚东县',
+    subtitle: '中印不丹边境 · 海拔2800-4400m',
+    color: '#dbeafe',
+    banner: '⛰️',
+    summary: '需边防证 · 预约小程序：亚东文旅通 · 自驾/公共交通可达',
+    note: '中印不丹边境 · 海拔2800-4400m · 需边防证 · 预约小程序：亚东文旅通。公共交通：日喀则汽车站每日两班 / 拉萨汽车站每日一班；自驾：日喀则/拉萨/成都，神州租车/一嗨租车',
+    days: [
+      { day: 1, title: '乃堆拉国门→噶举寺', desc: '亚东县→乃堆拉约1小时，海拔2800→4000m，早上需穿羽绒服。下山半山腰噶举寺，噶举派寺庙有绿度母，顺路浏览约20分钟', highlights: ['乃堆拉国门（中印）', '噶举寺', '绿度母'] },
+      { day: 2, title: '巴夏·野人谷·不丹边境', desc: '乃堆拉→巴夏约1小时，庞达村方向。野人谷、可见不丹🇧🇹、转经筒、亚东鱼刺身、庞达石绘体验', highlights: ['野人谷', '远眺不丹', '亚东鱼刺身', '庞达石绘'] },
+      { day: 3, title: '卓木拉日雪山·错朗湖', desc: '"干城章嘉新娘"，可飞无人机。拉萨→亚东县堆纳乡约6小时，途经普莫雍错-库拉岗日-多情措。错朗湖在卓木拉日和吉楚锥柯之间', highlights: ['卓木拉日雪山', '无人机航拍', '错朗湖', '多情措'] }
+    ]
+  }
+];
+
+function renderGuides() {
+  return `
+    <div class="page-header">
+      <h1>路书</h1>
+      <div class="subtitle">${GUIDES.length} 份路书 · 来自视频与攻略整理</div>
+    </div>
+    <div class="content">
+      ${GUIDES.map(g => `
+        <div class="card" style="padding:0;overflow:hidden;margin-bottom:14px;">
+          <div onclick="toggleGuide('${g.id}')" style="cursor:pointer;padding:16px;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="width:48px;height:48px;border-radius:12px;background:${g.color};display:flex;align-items:center;justify-content:center;font-size:24px;">${g.banner}</div>
+              <div style="flex:1;">
+                <div style="font-size:16px;font-weight:700;">${esc(g.title)}</div>
+                <div style="font-size:12px;color:var(--text-2);margin-top:2px;">${esc(g.subtitle)}</div>
+              </div>
+              <div style="color:var(--text-3);font-size:20px;" id="guide-arrow-${g.id}">›</div>
+            </div>
+            <div style="font-size:12px;color:var(--text-3);margin-top:8px;">${esc(g.summary)}</div>
+          </div>
+          <div id="guide-detail-${g.id}" style="display:none;padding:0 16px 16px;border-top:1px solid var(--border);">
+            ${g.note ? `<div style="font-size:13px;color:var(--text-2);background:var(--primary-bg);padding:10px 12px;border-radius:10px;margin:12px 0;line-height:1.5;">⚠️ ${esc(g.note)}</div>` : ''}
+            ${g.days.map(d => `
+              <div class="day-card" style="margin:8px 0;">
+                <h4 style="font-size:14px;color:var(--primary);">Day ${d.day} · ${esc(d.title)}</h4>
+                <div style="font-size:13px;color:var(--text-2);line-height:1.5;margin:6px 0;">${esc(d.desc)}</div>
+                ${d.highlights ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">${d.highlights.map(h => `<span style="font-size:11px;padding:3px 8px;background:${g.color};border-radius:10px;">${esc(h)}</span>`).join('')}</div>` : ''}
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function toggleGuide(id) {
+  const detail = document.getElementById('guide-detail-' + id);
+  const arrow = document.getElementById('guide-arrow-' + id);
+  if (detail.style.display === 'none') {
+    detail.style.display = 'block';
+    arrow.textContent = '⌄';
+    arrow.style.transform = 'rotate(180deg)';
+  } else {
+    detail.style.display = 'none';
+    arrow.textContent = '›';
+    arrow.style.transform = '';
+  }
 }
 
 // ===== 地图页 =====
