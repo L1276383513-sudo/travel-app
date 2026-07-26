@@ -266,36 +266,6 @@
     .modal-header h2 { font-size: 18px; font-weight: 700; }
     .modal-close { background: none; border: none; font-size: 24px; color: var(--text-3); cursor: pointer; }
 
-    /* 左侧抽屉 */
-    .drawer-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.45);
-      z-index: 450; opacity: 0; pointer-events: none;
-      transition: opacity 0.3s ease;
-    }
-    .drawer-overlay.active { opacity: 1; pointer-events: auto; }
-    .drawer {
-      position: fixed; top: 0; left: 0; bottom: 0;
-      width: 84%; max-width: 360px;
-      background: var(--bg); z-index: 460;
-      transform: translateX(-100%);
-      transition: transform 0.32s cubic-bezier(0.4,0,0.2,1);
-      overflow-y: auto;
-      padding: calc(env(safe-area-inset-top,0px) + 16px) 0 24px;
-      box-shadow: 2px 0 16px rgba(0,0,0,0.12);
-    }
-    .drawer.active { transform: translateX(0); }
-    .drawer-header { padding: 16px 20px 20px; text-align: center; }
-    .drawer-avatar {
-      width: 64px; height: 64px; border-radius: 50%;
-      background: var(--primary); color: #fff;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 26px; font-weight: 700; margin: 0 auto 10px;
-    }
-    .drawer-name { font-size: 17px; font-weight: 600; color: var(--text-1); }
-    .drawer-sub { font-size: 12px; color: var(--text-2); margin-top: 3px; }
-    .drawer-menu { padding: 0 16px; background: var(--card); border-radius: var(--radius); margin: 0 16px; box-shadow: var(--shadow); }
-    .drawer-divider { height: 1px; background: var(--border); margin: 10px 0; }
-
     /* 媒体上传预览 */
     .media-grid {
       display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
@@ -441,7 +411,6 @@
 <script>
 // ===== 图标 SVG =====
 const ICONS = {
-  menu: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>',
   home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
   map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 21 18 21 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>',
   plane: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20"/><path d="M13 2 4.1 12h15.8L11 22"/><path d="M12 12v9"/></svg>',
@@ -937,7 +906,7 @@ function renderHome() {
       <div class="subtitle">Hello, ${esc(appData.settings.name)}</div>
       <div class="title-row">
         <h1>旅行计划</h1>
-        <div class="icon-btn" onclick="openDrawer()">${ICONS.menu}</div>
+        <div class="icon-btn" onclick="switchPage('profile')">${ICONS.settings}</div>
       </div>
       <div class="hero-stats">
         <div class="hero-card">
@@ -1268,7 +1237,7 @@ function renderProfile() {
   return `
     <div class="page-header">
       <h1>我的</h1>
-      <div class="subtitle">个人信息</div>
+      <div class="subtitle">管理数据与偏好</div>
     </div>
     <div class="content">
       <div class="card" style="text-align:center;padding:28px 20px;">
@@ -1282,11 +1251,45 @@ function renderProfile() {
         </div>
       </div>
 
-      <div class="card" style="text-align:center;padding:18px 16px;">
-        <div style="font-size:13px;color:var(--text-2);margin-bottom:12px;">更多功能请点击左上角菜单</div>
-        <button class="btn btn-primary" onclick="openDrawer()" style="width:100%;">
-          ${ICONS.menu}<span style="margin-left:4px;">打开功能菜单</span>
-        </button>
+      <div class="card">
+        <div class="menu-item" onclick="switchPage('budget')">
+          <div class="menu-icon">${ICONS.wallet}</div>
+          <div class="menu-label">预算与花销</div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="switchPage('flights')">
+          <div class="menu-icon" style="background:var(--success-bg);">${ICONS.plane}</div>
+          <div class="menu-label">飞行记录</div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="switchPage('map')">
+          <div class="menu-icon" style="background:var(--purple-bg);">${ICONS.map}</div>
+          <div class="menu-label">旅行地图</div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="switchPage('guides')">
+          <div class="menu-icon" style="background:#fef3c7;">${ICONS.book}</div>
+          <div class="menu-label">路书</div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="switchPage('assessment')">
+          <div class="menu-icon" style="background:#fce7f3;">${ICONS.heart}</div>
+          <div class="menu-label">高原风险评估</div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="switchPage('checklists')">
+          <div class="menu-icon" style="background:var(--primary-bg);">${ICONS.checklist}</div>
+          <div class="menu-label">必备清单</div>
+          <div class="menu-arrow">›</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="menu-item" onclick="switchPage('settings')">
+          <div class="menu-icon">${ICONS.settings}</div>
+          <div class="menu-label">设置</div>
+          <div class="menu-arrow">›</div>
+        </div>
       </div>
 
       <div style="text-align:center;padding:12px 0 20px;color:var(--text-3);font-size:12px;">
@@ -2476,89 +2479,6 @@ function closeModal() {
   if (overlay) { overlay.remove(); document.body.style.overflow = ''; }
 }
 
-// ===== 左侧抽屉 =====
-function initDrawer() {
-  const overlay = document.createElement('div');
-  overlay.className = 'drawer-overlay';
-  overlay.id = 'drawerOverlay';
-  overlay.addEventListener('click', closeDrawer);
-  document.body.appendChild(overlay);
-
-  const drawer = document.createElement('aside');
-  drawer.className = 'drawer';
-  drawer.id = 'drawer';
-  drawer.addEventListener('click', (e) => e.stopPropagation());
-  document.body.appendChild(drawer);
-
-  refreshDrawer();
-}
-
-function refreshDrawer() {
-  const drawer = $('drawer');
-  if (!drawer) return;
-  const totalMiles = totalFlightMiles();
-  const totalSpent = appData.trips.reduce((s, t) => s + (t.expenses ? t.expenses.reduce((ss, e) => ss + (parseFloat(e.amount) || 0), 0) : 0), 0);
-  drawer.innerHTML = `
-    <div class="drawer-header">
-      <div class="drawer-avatar">${esc((appData.settings.name || '旅').charAt(0))}</div>
-      <div class="drawer-name">${esc(appData.settings.name)}</div>
-      <div class="drawer-sub">已累计飞行 ${totalMiles.toLocaleString()} 公里 · 已花 ¥${totalSpent.toFixed(0)}</div>
-    </div>
-    <div class="drawer-menu">
-      <div class="menu-item" onclick="closeDrawer(); switchPage('budget');">
-        <div class="menu-icon">${ICONS.wallet}</div>
-        <div class="menu-label">预算与花销</div>
-        <div class="menu-arrow">›</div>
-      </div>
-      <div class="menu-item" onclick="closeDrawer(); switchPage('flights');">
-        <div class="menu-icon" style="background:var(--success-bg);">${ICONS.plane}</div>
-        <div class="menu-label">飞行记录</div>
-        <div class="menu-arrow">›</div>
-      </div>
-      <div class="menu-item" onclick="closeDrawer(); switchPage('map');">
-        <div class="menu-icon" style="background:var(--purple-bg);">${ICONS.map}</div>
-        <div class="menu-label">旅行地图</div>
-        <div class="menu-arrow">›</div>
-      </div>
-      <div class="menu-item" onclick="closeDrawer(); switchPage('guides');">
-        <div class="menu-icon" style="background:#fef3c7;">${ICONS.book}</div>
-        <div class="menu-label">路书</div>
-        <div class="menu-arrow">›</div>
-      </div>
-      <div class="menu-item" onclick="closeDrawer(); switchPage('assessment');">
-        <div class="menu-icon" style="background:#fce7f3;">${ICONS.heart}</div>
-        <div class="menu-label">高原风险评估</div>
-        <div class="menu-arrow">›</div>
-      </div>
-      <div class="menu-item" onclick="closeDrawer(); switchPage('checklists');">
-        <div class="menu-icon" style="background:var(--primary-bg);">${ICONS.checklist}</div>
-        <div class="menu-label">必备清单</div>
-        <div class="menu-arrow">›</div>
-      </div>
-      <div class="drawer-divider"></div>
-      <div class="menu-item" onclick="closeDrawer(); switchPage('settings');">
-        <div class="menu-icon">${ICONS.settings}</div>
-        <div class="menu-label">设置</div>
-        <div class="menu-arrow">›</div>
-      </div>
-    </div>
-  `;
-}
-
-function openDrawer() {
-  $('drawer').classList.add('active');
-  $('drawerOverlay').classList.add('active');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeDrawer() {
-  const drawer = $('drawer');
-  const overlay = $('drawerOverlay');
-  if (drawer) drawer.classList.remove('active');
-  if (overlay) overlay.classList.remove('active');
-  document.body.style.overflow = '';
-}
-
 // ===== FAB 点击 =====
 function onFabClick() {
   switch (currentPage) {
@@ -3151,7 +3071,6 @@ function saveProfile() {
   appData.settings.name = $('profileName').value.trim() || 'Jojo 邓';
   saveData();
   renderApp();
-  refreshDrawer();
   toast('已保存');
 }
 
@@ -3201,7 +3120,6 @@ function doImport() {
         }
       }
       renderApp();
-      refreshDrawer();
       toast('导入成功');
     } catch (err) {
       toast('文件格式错误');
@@ -3232,7 +3150,6 @@ function confirmClearAll() {
   }
   mediaCache = {};
   renderApp();
-  refreshDrawer();
   toast('已清空');
 }
 
@@ -3244,7 +3161,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.warn('IndexedDB 不可用', e);
   }
   loadData();
-  initDrawer();
   renderApp();
 });
 
