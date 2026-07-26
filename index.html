@@ -355,6 +355,27 @@
     .check-name.checked { color: var(--text-3); text-decoration: line-through; }
     .check-actions { display: flex; gap: 4px; }
 
+    /* 风险评估 */
+    .risk-ring {
+      width: 140px; height: 140px; margin: 0 auto;
+      border-radius: 50%; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      position: relative;
+    }
+    .risk-ring svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+    .risk-ring .ring-bg { fill: none; stroke: var(--border); stroke-width: 8; }
+    .risk-ring .ring-fill { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 0.8s ease; }
+    .risk-score { font-size: 36px; font-weight: 700; z-index: 1; }
+    .risk-label { font-size: 12px; color: var(--text-2); z-index: 1; }
+    .advice-item {
+      display: flex; gap: 8px; padding: 10px 12px; margin-bottom: 8px;
+      border-radius: 10px; font-size: 13px; line-height: 1.5;
+    }
+    .advice-item.warning { background: #fff3cd; color: #856404; }
+    .advice-item.danger { background: #f8d7da; color: #721c24; }
+    .advice-item.info { background: var(--primary-bg); color: var(--primary-dark); }
+    .advice-item.success { background: #d4edda; color: #155724; }
+
     /* 隐藏滚动条 */
     ::-webkit-scrollbar { display: none; }
 
@@ -420,6 +441,7 @@ const DEFAULT_DATA = {
   flights: [],
   diaries: [],
   checklists: [],
+  assessments: [],
   settings: { name: 'Jojo 邓', currency: 'CNY' }
 };
 
@@ -857,6 +879,7 @@ function renderPage() {
     case 'flights': return renderFlights();
     case 'map': return renderMapPage();
     case 'guides': return renderGuides();
+    case 'assessment': return renderAssessment();
     default: return renderHome();
   }
 }
@@ -1246,6 +1269,11 @@ function renderProfile() {
         <div class="menu-item" onclick="switchPage('guides')">
           <div class="menu-icon" style="background:#fef3c7;">${ICONS.book}</div>
           <div class="menu-label">路书</div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="switchPage('assessment')">
+          <div class="menu-icon" style="background:#fce7f3;">${ICONS.heart}</div>
+          <div class="menu-label">高原风险评估</div>
           <div class="menu-arrow">›</div>
         </div>
         <div class="menu-item" onclick="switchPage('checklists')">
@@ -1734,6 +1762,271 @@ function deleteChecklist(listId) {
   saveData();
   renderApp();
   toast('场景已删除');
+}
+
+// ===== 高原风险评估 =====
+function renderAssessment() {
+  const history = appData.assessments || [];
+  return `
+    <div class="page-header">
+      <h1>高原风险评估</h1>
+      <div class="subtitle">智能评估你的高原旅行安全性</div>
+    </div>
+    <div class="content">
+      <div class="card">
+        <div style="text-align:center;padding:10px 0 16px;">
+          <div style="font-size:48px;margin-bottom:8px;">🏔️</div>
+          <div style="font-size:15px;font-weight:600;margin-bottom:4px;">高原旅行安全测评</div>
+          <div style="font-size:13px;color:var(--text-2);line-height:1.5;">输入你的身体数据，获取个性化风险评估和安全建议</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">年龄</label>
+          <input type="number" class="form-input" id="asAge" placeholder="例如：25" inputmode="numeric">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">性别</label>
+            <select class="form-select" id="asGender">
+              <option value="female">女</option>
+              <option value="male">男</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">运动习惯</label>
+            <select class="form-select" id="asSport">
+              <option value="often">经常运动</option>
+              <option value="sometimes">偶尔运动</option>
+              <option value="rarely">很少运动</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">身高 (cm)</label>
+            <input type="number" class="form-input" id="asHeight" placeholder="165" inputmode="numeric">
+          </div>
+          <div class="form-group">
+            <label class="form-label">体重 (kg)</label>
+            <input type="number" class="form-input" id="asWeight" placeholder="55" inputmode="decimal">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">收缩压 (mmHg)</label>
+            <input type="number" class="form-input" id="asSbp" placeholder="110" inputmode="numeric">
+          </div>
+          <div class="form-group">
+            <label class="form-label">舒张压 (mmHg)</label>
+            <input type="number" class="form-input" id="asDbp" placeholder="70" inputmode="numeric">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">目标海拔 (m)</label>
+          <input type="number" class="form-input" id="asAltitude" placeholder="例如：4500" inputmode="numeric">
+        </div>
+        <div class="form-group">
+          <label class="form-label">既往高反程度</label>
+          <select class="form-select" id="asHistory">
+            <option value="none">从未去过高原</option>
+            <option value="mild">曾去过，轻度高反</option>
+            <option value="moderate">曾去过，中度高反</option>
+            <option value="severe">曾去过，重度高反</option>
+            <option value="none_reaction">曾去过，无高反</option>
+          </select>
+        </div>
+        <div style="font-size:13px;font-weight:600;margin:16px 0 8px;">健康状况</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;padding:6px 12px;background:var(--bg);border-radius:20px;cursor:pointer;">
+            <input type="checkbox" id="asCardio"> 心血管疾病
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;padding:6px 12px;background:var(--bg);border-radius:20px;cursor:pointer;">
+            <input type="checkbox" id="asResp"> 呼吸系统疾病
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;padding:6px 12px;background:var(--bg);border-radius:20px;cursor:pointer;">
+            <input type="checkbox" id="asAnemia"> 贫血
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;padding:6px 12px;background:var(--bg);border-radius:20px;cursor:pointer;">
+            <input type="checkbox" id="asCold"> 感冒中
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;padding:6px 12px;background:var(--bg);border-radius:20px;cursor:pointer;">
+            <input type="checkbox" id="asSmoke"> 吸烟
+          </label>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="runAssessment()">开始评估</button>
+      </div>
+
+      ${history.length > 0 ? `
+        <div class="card" style="margin-top:14px;">
+          <div class="card-header"><h2>历史记录</h2></div>
+          ${history.slice().reverse().map(h => {
+            const level = getRiskLevel(h.score);
+            return `
+              <div class="list-item">
+                <div class="list-icon" style="background:${level.bg};">${ICONS.heart}</div>
+                <div class="list-body">
+                  <div class="list-title">${h.date} · 目标${h.altitude}m</div>
+                  <div class="list-desc">${level.label} · 得分 ${h.score}</div>
+                </div>
+                <div style="font-size:24px;font-weight:700;color:${level.color};">${h.score}</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+function getRiskLevel(score) {
+  if (score >= 80) return { label: '低风险', color: '#2d6a4f', bg: '#d4edda', level: 'low' };
+  if (score >= 60) return { label: '中等风险', color: '#b08968', bg: '#fff3cd', level: 'medium' };
+  if (score >= 40) return { label: '较高风险', color: '#e8590c', bg: '#ffe8cc', level: 'high' };
+  return { label: '高风险', color: '#b56576', bg: '#f8d7da', level: 'danger' };
+}
+
+function runAssessment() {
+  const age = parseInt($('asAge').value) || 0;
+  const height = parseFloat($('asHeight').value) || 0;
+  const weight = parseFloat($('asWeight').value) || 0;
+  const sbp = parseInt($('asSbp').value) || 0;
+  const dbp = parseInt($('asDbp').value) || 0;
+  const altitude = parseInt($('asAltitude').value) || 0;
+  const history = $('asHistory').value;
+  const sport = $('asSport').value;
+  const cardio = $('asCardio').checked;
+  const resp = $('asResp').checked;
+  const anemia = $('asAnemia').checked;
+  const cold = $('asCold').checked;
+  const smoke = $('asSmoke').checked;
+
+  if (!age || !height || !weight) return toast('请填写年龄、身高、体重');
+  if (!sbp || !dbp) return toast('请填写血压数据');
+  if (!altitude) return toast('请填写目标海拔');
+
+  let score = 0;
+  const advices = [];
+
+  // BMI 评分（15分）
+  const bmi = weight / Math.pow(height / 100, 2);
+  if (bmi >= 18.5 && bmi < 24) { score += 15; }
+  else if (bmi >= 24 && bmi < 28) { score += 10; advices.push({ type: 'warning', text: 'BMI偏胖（' + bmi.toFixed(1) + '），会增加心脏负担，建议适当减重后再前往' }); }
+  else if (bmi >= 28) { score += 5; advices.push({ type: 'warning', text: 'BMI肥胖（' + bmi.toFixed(1) + '），高反风险较大，建议咨询医生' }); }
+  else { score += 12; advices.push({ type: 'info', text: 'BMI偏瘦（' + bmi.toFixed(1) + '），注意补充营养和体力' }); }
+
+  // 血压评分（15分）
+  if (sbp < 120 && dbp < 80) { score += 15; }
+  else if (sbp < 140 && dbp < 90) { score += 10; advices.push({ type: 'warning', text: '血压偏高（' + sbp + '/' + dbp + '），高原会进一步升压，建议出发前咨询心血管科医生' }); }
+  else { score += 3; advices.push({ type: 'danger', text: '高血压（' + sbp + '/' + dbp + '），高原环境会加重心血管负担，强烈建议遵医嘱' }); }
+
+  // 年龄评分（10分）
+  if (age <= 35) { score += 10; }
+  else if (age <= 50) { score += 8; }
+  else if (age <= 60) { score += 6; advices.push({ type: 'info', text: '年龄' + age + '岁，建议出发前做全面体检' }); }
+  else { score += 3; advices.push({ type: 'warning', text: '年龄' + age + '岁，高原风险较高，务必遵医嘱并制定详细应急预案' }); }
+
+  // 疾病因素（基础25分，有则扣）
+  score += 25;
+  if (cardio) { score -= 15; advices.push({ type: 'danger', text: '⚠️ 心血管疾病患者上高原风险极大，必须咨询专科医生，不建议自行前往' }); }
+  if (resp) { score -= 10; advices.push({ type: 'danger', text: '⚠️ 呼吸系统疾病在缺氧环境会加重，务必携带常用药物并咨询医生' }); }
+  if (anemia) { score -= 5; advices.push({ type: 'warning', text: '贫血会加重缺氧症状，建议提前补充铁剂，咨询医生' }); }
+
+  // 感冒状态（15分）
+  if (!cold) { score += 15; }
+  else { score += 0; advices.push({ type: 'danger', text: '🚨 感冒上高原可能引发高原肺水肿/脑水肿，请痊愈后再出发！' }); }
+
+  // 高海拔经验（10分）
+  if (history === 'none_reaction') { score += 10; }
+  else if (history === 'mild') { score += 7; advices.push({ type: 'info', text: '曾有轻度高反，建议提前服用红景天，缓慢上升' }); }
+  else if (history === 'moderate') { score += 3; advices.push({ type: 'warning', text: '曾有中度高反，需格外注意，备好氧气和药物' }); }
+  else if (history === 'severe') { score += 1; advices.push({ type: 'danger', text: '⚠️ 曾有重度高反史，再次前往风险极高，强烈建议遵医嘱' }); }
+  else { score += 5; advices.push({ type: 'info', text: '首次前往高海拔，建议先到3000m适应1-2天再继续上升' }); }
+
+  // 运动习惯（5分）
+  if (sport === 'often') { score += 5; }
+  else if (sport === 'sometimes') { score += 3; }
+  else { score += 1; advices.push({ type: 'info', text: '运动较少，建议出发前1个月开始有氧训练' }); }
+
+  // 吸烟（5分）
+  if (!smoke) { score += 5; }
+  else { score += 2; advices.push({ type: 'warning', text: '吸烟会降低血氧能力，建议出发前减少吸烟量' }); }
+
+  // 目标海拔调整
+  let altCoeff = 1.0;
+  if (altitude >= 5000) { altCoeff = 0.7; advices.push({ type: 'danger', text: '海拔' + altitude + 'm属极高海拔，必须携带氧气瓶，制定下撤方案' }); }
+  else if (altitude >= 4000) { altCoeff = 0.8; advices.push({ type: 'warning', text: '海拔' + altitude + 'm属高海拔，建议携带氧气，注意高反症状' }); }
+  else if (altitude >= 3000) { altCoeff = 0.9; advices.push({ type: 'info', text: '海拔' + altitude + 'm，注意循序渐进适应' }); }
+
+  score = Math.round(score * altCoeff);
+  score = Math.max(0, Math.min(100, score));
+
+  // 根据等级加总结建议
+  const level = getRiskLevel(score);
+  if (level.level === 'low') {
+    advices.unshift({ type: 'success', text: '✅ 评估通过，可以前往高原。注意循序渐进上升，多喝水，避免剧烈运动' });
+  } else if (level.level === 'medium') {
+    advices.unshift({ type: 'warning', text: '⚠️ 中等风险，谨慎前往。建议提前7天服用红景天，备好氧气瓶和葡萄糖' });
+  } else if (level.level === 'high') {
+    advices.unshift({ type: 'warning', text: '⚠️ 较高风险，建议降低目标海拔或咨询医生后再决定' });
+  } else {
+    advices.unshift({ type: 'danger', text: '🚨 高风险，不建议前往高原，请遵医嘱' });
+  }
+
+  // 通用建议
+  advices.push({ type: 'info', text: '💡 通用建议：多喝热水、避免洗澡（前两天）、携带巧克力/葡萄糖、保持充足睡眠' });
+  advices.push({ type: 'info', text: '💡 如出现剧烈头痛、呕吐、意识模糊，立即下撤并就医' });
+
+  // 保存记录
+  if (!appData.assessments) appData.assessments = [];
+  const record = {
+    id: uid(),
+    date: new Date().toLocaleDateString('zh-CN'),
+    score: score,
+    altitude: altitude,
+    level: level.level,
+    bmi: parseFloat(bmi.toFixed(1)),
+    advices: advices
+  };
+  appData.assessments.push(record);
+  saveData();
+
+  // 显示结果
+  showAssessmentResult(record);
+}
+
+function showAssessmentResult(record) {
+  const level = getRiskLevel(record.score);
+  const circumference = 2 * Math.PI * 60;
+  const dashOffset = circumference * (1 - record.score / 100);
+
+  modalContext = null;
+  showModal('评估结果', `
+    <div style="text-align:center;padding:20px 0;">
+      <div class="risk-ring" style="position:relative;width:140px;height:140px;margin:0 auto;">
+        <svg width="140" height="140" viewBox="0 0 140 140" style="transform:rotate(-90deg);">
+          <circle cx="70" cy="70" r="60" class="ring-bg" stroke="#e9ecef" stroke-width="8" fill="none"/>
+          <circle cx="70" cy="70" r="60" stroke="${level.color}" stroke-width="8" fill="none"
+            stroke-linecap="round"
+            stroke-dasharray="${circumference}"
+            stroke-dashoffset="${dashOffset}"
+            style="transition:stroke-dashoffset 1s ease;"/>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+          <div class="risk-score" style="color:${level.color};">${record.score}</div>
+          <div class="risk-label">${level.label}</div>
+        </div>
+      </div>
+      <div style="margin-top:12px;font-size:13px;color:var(--text-2);">目标海拔 ${record.altitude}m · BMI ${record.bmi}</div>
+    </div>
+    <div style="margin-top:16px;">
+      ${record.advices.map(a => `
+        <div class="advice-item ${a.type}">
+          ${esc(a.text)}
+        </div>
+      `).join('')}
+    </div>
+  `, [
+    { text: '完成', action: "closeModal(); renderApp();", class: 'btn btn-primary', block: true }
+  ]);
 }
 
 // ===== 路书页 =====
