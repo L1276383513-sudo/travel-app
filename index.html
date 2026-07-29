@@ -442,7 +442,7 @@ const DEFAULT_DATA = {
   diaries: [],
   checklists: [],
   assessments: [],
-  settings: { name: '旅行者', currency: 'CNY' }
+  settings: { name: 'Jojo 邓', currency: 'CNY' }
 };
 
 let appData = JSON.parse(JSON.stringify(DEFAULT_DATA));
@@ -501,16 +501,64 @@ async function deleteMedia(id) {
 // ===== localStorage 数据 =====
 function loadData() {
   try {
-    const saved = localStorage.getItem('travelAppData_v8');
+    const saved = localStorage.getItem('travelAppData_v7');
     if (saved) {
       const parsed = JSON.parse(saved);
       appData = { ...DEFAULT_DATA, ...parsed };
       return;
     }
   } catch (e) { console.error(e); }
-  // 首次使用：预置情景清单
+  // 首次使用：预置数据
   appData = {
-    trips: [],
+    trips: [
+      {
+        id: uid(),
+        title: '西藏-亚东县',
+        startDate: '2026-09-15',
+        endDate: '2026-09-18',
+        destination: '亚东',
+        country: '中国',
+        budget: 8000,
+        note: '中印不丹边境 · 海拔2800-4400m · 需边防证 · 预约小程序：亚东文旅通',
+        activities: [
+          { day: 0, time: '', title: '交通方式', desc: '公共交通：日喀则汽车站每日两班 / 拉萨汽车站每日一班；自驾：日喀则/拉萨/成都，神州租车/一嗨租车' },
+          { day: 1, time: '08:00', title: '乃堆拉国门（中印）', desc: '亚东县→乃堆拉约1小时，海拔2800→4000m，早上需穿羽绒服' },
+          { day: 1, time: '10:00', title: '噶举寺', desc: '乃堆拉下山半山腰，噶举派寺庙，有绿度母，顺路浏览约20分钟' },
+          { day: 2, time: '09:00', title: '巴夏', desc: '乃堆拉→巴夏约1小时，庞达村方向' },
+          { day: 2, time: '09:30', title: '野人谷', desc: '巴夏附近自然景观' },
+          { day: 2, time: '10:00', title: '远眺不丹🇧🇹', desc: '巴夏方向可见不丹边境' },
+          { day: 2, time: '10:30', title: '转经筒', desc: '巴夏沿线' },
+          { day: 2, time: '12:00', title: '亚东鱼刺身', desc: '当地特色美食' },
+          { day: 2, time: '14:00', title: '庞达石绘', desc: '当地人文项目体验' },
+          { day: 3, time: '06:00', title: '卓木拉日雪山', desc: '"干城章嘉新娘"，可飞无人机。拉萨→亚东县堆纳乡约6小时，途经普莫雍错-库拉岗日-多情措' },
+          { day: 3, time: '15:00', title: '错朗湖', desc: '卓木拉日和吉楚锥柯之间' }
+        ],
+        expenses: []
+      },
+      {
+        id: uid(),
+        title: 'G219拉萨以西·新藏线',
+        startDate: '',
+        endDate: '',
+        destination: '阿里',
+        country: '中国',
+        budget: 20000,
+        note: '国之大道G219 · 拉萨以西才是真正的西藏 · 全程高海拔自驾 · 需边防证（日喀则/阿里/山南）· 建议组队出发',
+        activities: [
+          { day: 0, time: '', title: '行前须知', desc: '边防证需办：日喀则、阿里、山南地区。建议组队，备足油（见到加油站就加），携带红景天/葡萄糖/巧克力。全程平均海拔4500m+' },
+          { day: 1, time: '', title: '拉萨→羊卓雍措→普莫雍措→康马', desc: '拉萨出发，翻越岗巴拉山口看羊卓雍措（4441m），继续至普莫雍措（5010m，世界最高淡水湖），夜宿康马县' },
+          { day: 2, time: '', title: '康马→塔日山垭口→岗巴→冲巴雍措', desc: '翻越G219最高点塔日山垭口（5500m），至岗巴县看冲巴雍措，远眺喜马拉雅群峰' },
+          { day: 3, time: '', title: '岗巴→定结→珠峰大本营', desc: '经定结县前往珠峰，走珠峰108道拐，加乌拉垭口同时眺望5座8000米级雪山（珠峰、洛子峰、马卡鲁、卓奥友、希夏邦马）' },
+          { day: 4, time: '', title: '珠峰→吉隆', desc: '珠峰出发经希夏邦马峰（8012m）、佩枯措，至吉隆沟。吉隆大峡谷、乃夏村，海拔骤降植被丰富' },
+          { day: 5, time: '', title: '吉隆→帕羊', desc: '离开吉隆沟重返高原，经帕羊镇，沿途藏野驴/藏羚羊出没，高原荒漠地貌' },
+          { day: 6, time: '', title: '帕羊→普兰→玛旁雍错→冈仁波齐', desc: '抵达圣湖玛旁雍错（4588m）和鬼湖拉昂措，远眺纳木那尼峰（7694m）。冈仁波齐（6714m）——"世界中心"，多宗教朝圣圣地' },
+          { day: 7, time: '', title: '冈仁波齐→扎达土林→古格王朝', desc: '扎达土林异星地貌，古格王朝遗址千年废墟，日落时分最为震撼。建议在扎达住一晚' },
+          { day: 8, time: '', title: '扎达→狮泉河→日土→班公湖', desc: '至狮泉河（阿里地区行署），继续至日土县班公湖，领取G219勇士证书。班公湖中印界湖，鸟岛众多' },
+          { day: 9, time: '', title: '日土→多玛乡→界山达坂', desc: '穿越羌塘无人区边缘，经多玛乡（最后加油点），翻越界山达坂（5347m），进入新疆境内' }
+        ],
+        expenses: []
+      }
+    ],
     wishlist: [],
     flights: [],
     diaries: [],
@@ -702,14 +750,13 @@ function loadData() {
         ]
       }
     ],
-    assessments: [],
-    settings: { name: '旅行者', currency: 'CNY' }
+    settings: { name: 'Jojo 邓', currency: 'CNY' }
   };
   saveData();
 }
 
 function saveData() {
-  localStorage.setItem('travelAppData_v8', JSON.stringify(appData));
+  localStorage.setItem('travelAppData_v7', JSON.stringify(appData));
 }
 
 // ===== 工具函数 =====
