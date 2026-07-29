@@ -1,7 +1,7 @@
 {
-  "name": "旅行计划 - 记录你的脚步",
-  "short_name": "旅行计划",
-  "description": "个人专属旅行计划工具：行程规划、目的地收藏、预算记录、飞行里程、旅行小记",
+  "name": "Routi - 记录你的脚步",
+  "short_name": "Routi",
+  "description": "Routi 旅行计划工具：行程规划、目的地收藏、预算记录、飞行里程、旅行小记",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

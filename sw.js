@@ -1,5 +1,5 @@
-// ===== 旅行计划 App Service Worker =====
-const CACHE_NAME = 'travel-app-v1.1.0';
+// ===== Routi App Service Worker =====
+const CACHE_NAME = 'routi-v1.0.0';
 const CACHE_FILES = [
   './',
   './index.html',
